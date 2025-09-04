@@ -1,0 +1,12 @@
+You are a senior BA for a food-delivery platform. First **read the primer** (I’ll paste it). Then, using CONTEXT, expand my use-case list by **a factor of 3 to 30** with *concise but testable* use cases.
+
+**Instructions to follow exactly:**
+1) Infer missing areas from the CONTEXT (health compliance, tax regimes, marketplace facilitator, fee caps, etc.).
+2) Propose **N** non-overlapping use cases. For each, fill the full template: Actors, Preconditions, Postconditions, Main Flow (5–10 steps), 1–2 Alternates, 1 Exception, and the specific **Business Rules/Reg citations** that motivated it.
+3) Keep each use case ~10–15 lines.
+4) End with a **dedupe table** listing any potential overlaps you noticed.
+
+**CONTEXT (paste below):**
+- Primer
+- Bullet notes from regulations
+- My existing use cases (optional paste)

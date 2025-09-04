@@ -1,0 +1,10 @@
+You are a senior BA for a food-delivery platform. Using the CONTEXT, produce **30** new, non-overlapping **use case titles** with one-sentence goals.
+
+CONTEXT:
+- Bullet notes from health & food-tax regulations
+- My current use-case list (paste below if available)
+
+**Output format (strict):**
+- A numbered list of use case **titles** (Title — one-sentence goal)
+- Do not include flows, just titles+goals
+- Group by theme if obvious (e.g., Health Compliance, Tax & Fees, Operations)

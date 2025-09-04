@@ -1,0 +1,7 @@
+You are auditing my 1a1 deliverables for a food delivery system.
+
+**Task:** From the provided files, list the **top 12 gaps** that would matter to a stakeholder review (missing stakeholders, use cases, non-compliant flows, traceability gaps).
+
+**Output:**
+- A prioritized list with *why it matters* and *how to fix*
+- A mini traceability snippet linking 1 missing use case → requirement → test idea
