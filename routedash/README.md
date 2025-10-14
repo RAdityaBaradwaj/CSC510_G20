@@ -5,6 +5,7 @@ RouteDash is a travel-aware pickup planner that pairs food orders with your curr
 ## Features delivered
 - **Demo authentication** – simple sign-in flow with persisted session storage.
 - **Route inputs** – capture origin and destination addresses with inline address autocomplete.
+- **Mealtime slider** – scrub across the full trip timeline to choose when you’d like to stop for food.
 - **Directions fetch** – integrates with the Google Routes API to draw the full route polyline.
 - **Map visualization** – interactive map with origin/destination pins and automatic viewport fitting.
 - **Restaurant recommendations** – surfaces the top pickup-friendly restaurants around the 30–40 minute point of your drive.

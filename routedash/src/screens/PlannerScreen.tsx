@@ -9,6 +9,7 @@ import {
   View,
   useWindowDimensions
 } from "react-native";
+import Slider from "@react-native-community/slider";
 import MapView, { LatLng, Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../context/AuthContext";
@@ -83,6 +84,7 @@ export const PlannerScreen = () => {
   const [origin, setOrigin] = useState<string>("");
   const [destination, setDestination] = useState<string>("");
   const [isRoutePlotted, setIsRoutePlotted] = useState(false);
+  const [mealWindow, setMealWindow] = useState<number>(35);
 
   const window = useWindowDimensions();
   const mapRef = useRef<MapView | null>(null);
@@ -92,12 +94,24 @@ export const PlannerScreen = () => {
   const coordinates = result?.coordinates ?? [];
   const startPoint: LatLng | undefined = coordinates[0];
   const endPoint: LatLng | undefined = coordinates[coordinates.length - 1];
+  const totalMinutes = useMemo(
+    () => (result?.leg.durationSeconds ? Math.max(Math.round(result.leg.durationSeconds / 60), 1) : null),
+    [result?.leg.durationSeconds]
+  );
 
   const region = useMemo(() => computeRegionFromCoordinates(coordinates), [coordinates]);
   const mapHeight = useMemo(() => Math.max(260, window.height * 0.33), [window.height]);
   const isCompactWidth = window.width < 380;
   const isCompactHeight = window.height < 760;
   const statSpacingStyle = useMemo(() => (isCompactWidth ? undefined : styles.statCardSpacing), [isCompactWidth]);
+
+  const sliderMin = totalMinutes ? 1 : 15;
+  const sliderMax = totalMinutes ?? 120;
+  const sliderStep = totalMinutes && totalMinutes <= 45 ? 1 : 5;
+  const sliderValue = useMemo(
+    () => Math.min(Math.max(mealWindow, sliderMin), sliderMax),
+    [mealWindow, sliderMax, sliderMin]
+  );
 
   useEffect(() => {
     if (coordinates.length && mapRef.current) {
@@ -178,11 +192,17 @@ export const PlannerScreen = () => {
 
   useEffect(() => {
     if (result?.coordinates?.length && result.leg.durationSeconds) {
-      void fetchRestaurants(result.coordinates, result.leg.durationSeconds);
+      void fetchRestaurants(result.coordinates, result.leg.durationSeconds, sliderValue);
     } else {
       resetRecommendations();
     }
-  }, [fetchRestaurants, resetRecommendations, result?.coordinates, result?.leg.durationSeconds]);
+  }, [
+    fetchRestaurants,
+    sliderValue,
+    resetRecommendations,
+    result?.coordinates,
+    result?.leg.durationSeconds
+  ]);
 
   useEffect(() => {
     if (!result?.coordinates?.length) {
@@ -194,6 +214,7 @@ export const PlannerScreen = () => {
     setOrigin("");
     setDestination("");
     setIsRoutePlotted(false);
+    setMealWindow(35);
     reset();
     resetRecommendations();
     originAutocomplete.clearSuggestions();
@@ -203,6 +224,15 @@ export const PlannerScreen = () => {
     }
   };
 
+  useEffect(() => {
+    if (totalMinutes) {
+      const clamped = Math.min(Math.max(mealWindow, sliderMin), sliderMax);
+      if (clamped !== mealWindow) {
+        setMealWindow(clamped);
+      }
+    }
+  }, [mealWindow, sliderMax, sliderMin, totalMinutes]);
+
   const statusLabel: string = useMemo(() => {
     if (isDirectionsLoading) {
       return "Mapping your drive…";
@@ -211,14 +241,14 @@ export const PlannerScreen = () => {
       return "Searching for restaurants 30–40 minutes ahead…";
     }
     if (restaurants.length) {
-      const minuteMark = targetTravelMinutes ?? 35;
+      const minuteMark = targetTravelMinutes ?? sliderValue;
       return `Here are ${restaurants.length} restaurants near the ${minuteMark}-minute mark of your trip.`;
     }
     if (recommendationsError) {
       return "We couldn't load restaurant ideas just now. Try again in a moment.";
     }
     if (isRoutePlotted) {
-      return "Route ready — adjust your search to refresh recommendations.";
+      return "Route ready — adjust the mealtime slider to refresh recommendations.";
     }
     return "Plot a trip to discover great pickup stops along the way.";
   }, [
@@ -227,12 +257,14 @@ export const PlannerScreen = () => {
     restaurants.length,
     targetTravelMinutes,
     recommendationsError,
-    isRoutePlotted
+    isRoutePlotted,
+    sliderValue
   ]);
 
   const canPreview =
     Boolean(origin.trim()) && Boolean(destination.trim()) && !isDirectionsLoading;
   const canClear = Boolean(origin.trim() || destination.trim() || coordinates.length);
+  const canAdjustMealWindow = Boolean(totalMinutes && sliderMax > sliderMin);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -347,6 +379,45 @@ export const PlannerScreen = () => {
             </Text>
           </Pressable>
 
+          <View style={styles.mealWindowControl}>
+            <View style={styles.mealWindowHeader}>
+              <Text style={styles.inputLabel}>Preferred mealtime</Text>
+              <Text style={styles.mealWindowValue}>
+                {sliderValue} min{totalMinutes ? ` of ${totalMinutes} min` : ""}
+              </Text>
+            </View>
+            <Slider
+              style={styles.mealWindowSlider}
+              minimumValue={sliderMin}
+              maximumValue={sliderMax}
+              step={sliderStep}
+              value={sliderValue}
+              onValueChange={(value) => {
+                const stepSize = sliderStep || 1;
+                const next = Math.min(
+                  Math.max(Math.round(value / stepSize) * stepSize, sliderMin),
+                  sliderMax
+                );
+                if (next !== mealWindow) {
+                  setMealWindow(next);
+                }
+              }}
+              minimumTrackTintColor="#2563EB"
+              maximumTrackTintColor="#CBD5F5"
+              thumbTintColor={canAdjustMealWindow ? "#2563EB" : "#94A3B8"}
+              disabled={!canAdjustMealWindow}
+            />
+            <View style={styles.mealWindowLabels}>
+              <Text style={styles.mealWindowLabelText}>{sliderMin} min</Text>
+              <Text style={styles.mealWindowLabelText}>{sliderMax} min</Text>
+            </View>
+            {!canAdjustMealWindow ? (
+              <Text style={styles.suggestionNote}>
+                Preview a route to unlock mealtime suggestions.
+              </Text>
+            ) : null}
+          </View>
+
           <Pressable
             style={[styles.secondaryButton, styles.clearButton, !canClear && styles.disabled]}
             disabled={!canClear}
@@ -419,7 +490,7 @@ export const PlannerScreen = () => {
             <Text style={styles.detailSubtitle}>
               {targetTravelMinutes
                 ? `Close to the ${targetTravelMinutes}-minute mark of your trip`
-                : "Aiming for the 30–40 minute window"}
+                : `Aiming for the ${mealWindow}-minute window`}
             </Text>
 
             {isRecommendationsLoading ? (
@@ -601,6 +672,38 @@ const styles = StyleSheet.create({
     paddingVertical: Platform.select({ ios: 16, android: 12 }),
     fontSize: 16,
     color: "#0F172A"
+  },
+  mealWindowControl: {
+    marginTop: 18,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#F8FAFC",
+    padding: 16
+  },
+  mealWindowHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12
+  },
+  mealWindowValue: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#2563EB"
+  },
+  mealWindowSlider: {
+    width: "100%",
+    height: 40
+  },
+  mealWindowLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 6
+  },
+  mealWindowLabelText: {
+    fontSize: 12,
+    color: "#64748B"
   },
   primaryButton: {
     borderRadius: 14,

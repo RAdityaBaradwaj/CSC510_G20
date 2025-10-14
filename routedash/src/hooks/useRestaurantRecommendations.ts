@@ -30,27 +30,30 @@ const getApiKey = (): string => {
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
-const pickTargetCoordinate = (coordinates: Coordinate[], durationSeconds: number) => {
+const pickTargetCoordinate = (
+  coordinates: Coordinate[],
+  durationSeconds: number,
+  preferredMinuteMark: number
+) => {
   if (!coordinates.length) {
     return null;
   }
 
   const totalMinutes = durationSeconds > 0 ? durationSeconds / 60 : 0;
-  const idealMinuteMark = 35;
+  const desiredMinutes = preferredMinuteMark > 0 ? preferredMinuteMark : 35;
 
   let ratio: number;
 
   if (!totalMinutes) {
     ratio = 0.5;
-  } else if (totalMinutes < 30) {
-    ratio = 0.85;
   } else {
-    ratio = clamp(idealMinuteMark / totalMinutes, 0.55, 0.92);
+    const rawRatio = desiredMinutes / totalMinutes;
+    ratio = clamp(rawRatio, 0.05, 0.95);
   }
 
   const index = Math.min(Math.round(ratio * (coordinates.length - 1)), coordinates.length - 1);
   const coordinate = coordinates[index] ?? coordinates[coordinates.length - 1];
-  const minuteMark = totalMinutes ? Math.round(totalMinutes * ratio) : Math.round(idealMinuteMark);
+  const minuteMark = totalMinutes ? Math.round(totalMinutes * ratio) : Math.round(desiredMinutes);
 
   return {
     coordinate,
@@ -82,7 +85,7 @@ export const useRestaurantRecommendations = () => {
   });
 
   const fetchRestaurants = useCallback(
-    async (coordinates: Coordinate[], durationSeconds: number) => {
+    async (coordinates: Coordinate[], durationSeconds: number, preferredMinuteMark: number) => {
       if (!coordinates.length) {
         setState((prev) => ({
           ...prev,
@@ -106,7 +109,7 @@ export const useRestaurantRecommendations = () => {
         return;
       }
 
-      const target = pickTargetCoordinate(coordinates, durationSeconds);
+      const target = pickTargetCoordinate(coordinates, durationSeconds, preferredMinuteMark);
       if (!target) {
         setState({
           isLoading: false,
