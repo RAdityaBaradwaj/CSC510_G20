@@ -14,8 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../context/AuthContext";
 import { useDirections } from "../hooks/useDirections";
 import { PlaceSuggestion, usePlacesAutocomplete } from "../hooks/usePlacesAutocomplete";
-
-type TripState = "idle" | "ready" | "running" | "paused" | "complete";
+import { useRestaurantRecommendations } from "../hooks/useRestaurantRecommendations";
 
 const DEFAULT_REGION = {
   latitude: 37.7749,
@@ -34,25 +33,6 @@ const formatDistance = (meters: number) => {
   }
 
   return `${(meters / 1000).toFixed(1)} km`;
-};
-
-const formatEta = (seconds: number) => {
-  if (!seconds) {
-    return "—";
-  }
-
-  if (seconds < 60) {
-    return `${seconds}s`;
-  }
-
-  const minutes = Math.round(seconds / 60);
-  if (minutes < 60) {
-    return `${minutes} min`;
-  }
-
-  const hrs = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  return remainingMinutes ? `${hrs}h ${remainingMinutes}m` : `${hrs}h`;
 };
 
 const computeRegionFromCoordinates = (points: LatLng[]) => {
@@ -91,26 +71,27 @@ export const PlannerScreen = () => {
   } = useDirections();
   const originAutocomplete = usePlacesAutocomplete();
   const destinationAutocomplete = usePlacesAutocomplete();
+  const {
+    error: recommendationsError,
+    fetchRestaurants,
+    isLoading: isRecommendationsLoading,
+    items: restaurants,
+    targetTravelMinutes,
+    reset: resetRecommendations
+  } = useRestaurantRecommendations();
 
   const [origin, setOrigin] = useState<string>("");
   const [destination, setDestination] = useState<string>("");
-  const [tripState, setTripState] = useState<TripState>("idle");
-  const [activeIndex, setActiveIndex] = useState<number>(0);
-  const [speedMultiplier, setSpeedMultiplier] = useState<number>(1);
+  const [isRoutePlotted, setIsRoutePlotted] = useState(false);
 
   const window = useWindowDimensions();
   const mapRef = useRef<MapView | null>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const speedMultiplierRef = useRef<number>(1);
   const originDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const destinationDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const coordinates = result?.coordinates ?? [];
   const startPoint: LatLng | undefined = coordinates[0];
   const endPoint: LatLng | undefined = coordinates[coordinates.length - 1];
-  const currentPoint: LatLng | undefined = coordinates[activeIndex];
-
-  const progress = coordinates.length > 1 ? activeIndex / (coordinates.length - 1) : 0;
 
   const region = useMemo(() => computeRegionFromCoordinates(coordinates), [coordinates]);
   const mapHeight = useMemo(() => Math.max(260, window.height * 0.33), [window.height]);
@@ -129,9 +110,6 @@ export const PlannerScreen = () => {
 
   useEffect(
     () => () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
       if (originDebounceRef.current) {
         clearTimeout(originDebounceRef.current);
       }
@@ -142,20 +120,10 @@ export const PlannerScreen = () => {
     []
   );
 
-  const clearTimer = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  };
-
   const handlePreviewRoute = async () => {
     const success = await fetchRoute(origin, destination);
     if (success) {
-      setTripState("ready");
-      setActiveIndex(0);
-      setSpeedMultiplier(1);
-      speedMultiplierRef.current = 1;
+      setIsRoutePlotted(true);
     }
   };
 
@@ -208,135 +176,63 @@ export const PlannerScreen = () => {
     }
   };
 
-  const handleStartTrip = () => {
-    if (!coordinates.length) {
-      return;
+  useEffect(() => {
+    if (result?.coordinates?.length && result.leg.durationSeconds) {
+      void fetchRestaurants(result.coordinates, result.leg.durationSeconds);
+    } else {
+      resetRecommendations();
     }
-
-    clearTimer();
-    setTripState("running");
-
-    timerRef.current = setInterval(() => {
-      setActiveIndex((prev) => {
-        const nextIndex = prev + speedMultiplierRef.current;
-        if (nextIndex >= coordinates.length - 1) {
-          clearTimer();
-          setTripState("complete");
-          return coordinates.length - 1;
-        }
-        return nextIndex;
-      });
-    }, 1000);
-  };
-
-  const handlePauseTrip = () => {
-    clearTimer();
-    setTripState("paused");
-  };
-
-  const handleResetTrip = () => {
-    clearTimer();
-    reset();
-    setTripState("idle");
-    setActiveIndex(0);
-    setSpeedMultiplier(1);
-    speedMultiplierRef.current = 1;
-  };
+  }, [fetchRestaurants, resetRecommendations, result?.coordinates, result?.leg.durationSeconds]);
 
   useEffect(() => {
-    if (!["running", "paused"].includes(tripState) && timerRef.current) {
-      clearTimer();
+    if (!result?.coordinates?.length) {
+      setIsRoutePlotted(false);
     }
-  }, [tripState]);
+  }, [result?.coordinates?.length]);
+
+  const handleClearPlanner = () => {
+    setOrigin("");
+    setDestination("");
+    setIsRoutePlotted(false);
+    reset();
+    resetRecommendations();
+    originAutocomplete.clearSuggestions();
+    destinationAutocomplete.clearSuggestions();
+    if (mapRef.current) {
+      mapRef.current.animateToRegion(DEFAULT_REGION, 300);
+    }
+  };
 
   const statusLabel: string = useMemo(() => {
-    switch (tripState) {
-      case "ready":
-        return "Route mapped — ready when you are.";
-      case "running":
-        return "Trip is in progress.";
-      case "paused":
-        return "Trip paused.";
-      case "complete":
-        return "Arrived at pickup!";
-      default:
-        return "Plot a trip to get started.";
+    if (isDirectionsLoading) {
+      return "Mapping your drive…";
     }
-  }, [tripState]);
-
-  const remainingDurationSeconds = result?.leg.durationSeconds
-    ? Math.max(result.leg.durationSeconds * (1 - progress), 0)
-    : 0;
-
-  const estimatedArrival = useMemo(() => {
-    if (!remainingDurationSeconds) {
-      return "—";
+    if (isRecommendationsLoading) {
+      return "Searching for restaurants 30–40 minutes ahead…";
     }
-    const eta = new Date(Date.now() + remainingDurationSeconds * 1000);
-    return eta.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  }, [remainingDurationSeconds]);
+    if (restaurants.length) {
+      const minuteMark = targetTravelMinutes ?? 35;
+      return `Here are ${restaurants.length} restaurants near the ${minuteMark}-minute mark of your trip.`;
+    }
+    if (recommendationsError) {
+      return "We couldn't load restaurant ideas just now. Try again in a moment.";
+    }
+    if (isRoutePlotted) {
+      return "Route ready — adjust your search to refresh recommendations.";
+    }
+    return "Plot a trip to discover great pickup stops along the way.";
+  }, [
+    isDirectionsLoading,
+    isRecommendationsLoading,
+    restaurants.length,
+    targetTravelMinutes,
+    recommendationsError,
+    isRoutePlotted
+  ]);
 
-  const canStartTrip = tripState === "ready" || tripState === "paused";
   const canPreview =
     Boolean(origin.trim()) && Boolean(destination.trim()) && !isDirectionsLoading;
-
-  const renderControls = () => {
-    if (!coordinates.length) {
-      return null;
-    }
-
-    return (
-      <View style={styles.tripControls}>
-        {tripState !== "running" ? (
-          <Pressable
-            style={[styles.primaryButton, styles.tripButton, !canStartTrip && styles.disabled]}
-            disabled={!canStartTrip}
-            onPress={handleStartTrip}
-          >
-            <Text style={styles.primaryButtonText}>{tripState === "paused" ? "Resume Trip" : "Start Trip"}</Text>
-          </Pressable>
-        ) : (
-          <Pressable style={[styles.secondaryButton, styles.tripButton]} onPress={handlePauseTrip}>
-            <Text style={styles.secondaryButtonText}>Pause</Text>
-          </Pressable>
-        )}
-
-        <Pressable
-          style={[
-            styles.secondaryButton,
-            styles.tripButton,
-            (tripState === "idle" || isDirectionsLoading) && styles.disabled
-          ]}
-          onPress={handleResetTrip}
-          disabled={tripState === "idle" || isDirectionsLoading}
-        >
-          <Text style={styles.secondaryButtonText}>Reset</Text>
-        </Pressable>
-
-        <View style={styles.speedRow}>
-          <Text style={styles.speedLabel}>Sim speed</Text>
-          <View style={styles.speedButtons}>
-            {[1, 2, 4].map((speed) => (
-              <Pressable
-                key={speed}
-                style={[styles.speedButton, speedMultiplier === speed && styles.speedButtonActive]}
-                onPress={() => {
-                  setSpeedMultiplier(speed);
-                  speedMultiplierRef.current = speed;
-                  if (tripState === "running") {
-                    handleStartTrip();
-                  }
-                }}
-                disabled={tripState === "idle" || !coordinates.length}
-              >
-                <Text style={[styles.speedButtonText, speedMultiplier === speed && styles.speedButtonTextActive]}>{speed}x</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-      </View>
-    );
-  };
+  const canClear = Boolean(origin.trim() || destination.trim() || coordinates.length);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -426,7 +322,8 @@ export const PlannerScreen = () => {
                     key={suggestion.id}
                     style={[
                       styles.suggestionRow,
-                      index === destinationAutocomplete.suggestions.length - 1 && styles.suggestionRowLast
+                      index === destinationAutocomplete.suggestions.length - 1 &&
+                        styles.suggestionRowLast
                     ]}
                     onPress={() => handleSelectSuggestion(suggestion, "destination")}
                   >
@@ -448,6 +345,14 @@ export const PlannerScreen = () => {
             <Text style={styles.primaryButtonText}>
               {isDirectionsLoading ? "Calculating…" : "Preview route"}
             </Text>
+          </Pressable>
+
+          <Pressable
+            style={[styles.secondaryButton, styles.clearButton, !canClear && styles.disabled]}
+            disabled={!canClear}
+            onPress={handleClearPlanner}
+          >
+            <Text style={styles.secondaryButtonText}>Clear route</Text>
           </Pressable>
 
           {directionsError ? <Text style={styles.errorBanner}>{directionsError}</Text> : null}
@@ -485,9 +390,6 @@ export const PlannerScreen = () => {
                   {endPoint ? (
                     <Marker coordinate={endPoint} title="Destination" pinColor="#ef4444" />
                   ) : null}
-                  {currentPoint ? (
-                    <Marker coordinate={currentPoint} title="Current position" pinColor="#f97316" />
-                  ) : null}
                 </>
               ) : null}
             </MapView>
@@ -495,21 +397,67 @@ export const PlannerScreen = () => {
 
           <View style={styles.routeSummary}>
             <View style={[styles.statCard, statSpacingStyle]}>
-              <Text style={styles.statLabel}>Progress</Text>
-              <Text style={styles.statValue}>{Math.round(progress * 100)}%</Text>
+              <Text style={styles.statLabel}>Drive time</Text>
+              <Text style={styles.statValue}>{result?.leg.durationText ?? "—"}</Text>
             </View>
             <View style={[styles.statCard, statSpacingStyle]}>
-              <Text style={styles.statLabel}>ETA</Text>
-              <Text style={styles.statValue}>{estimatedArrival}</Text>
+              <Text style={styles.statLabel}>Distance</Text>
+              <Text style={styles.statValue}>{result?.leg.distanceText ?? "—"}</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Time left</Text>
-              <Text style={styles.statValue}>{formatEta(remainingDurationSeconds)}</Text>
+              <Text style={styles.statLabel}>Top picks</Text>
+              <Text style={styles.statValue}>
+                {isRecommendationsLoading ? "…" : restaurants.length || (isRoutePlotted ? "0" : "—")}
+              </Text>
             </View>
           </View>
-
-          {renderControls()}
         </View>
+
+        {isRoutePlotted ? (
+          <View style={[styles.statusCard, isCompactWidth && styles.cardCompact]}>
+            <Text style={styles.sectionTitle}>Restaurant picks</Text>
+            <Text style={styles.detailSubtitle}>
+              {targetTravelMinutes
+                ? `Close to the ${targetTravelMinutes}-minute mark of your trip`
+                : "Aiming for the 30–40 minute window"}
+            </Text>
+
+            {isRecommendationsLoading ? (
+              <Text style={styles.suggestionNote}>Finding popular restaurants near your route…</Text>
+            ) : restaurants.length ? (
+              <View style={styles.recommendationList}>
+                {restaurants.map((restaurant) => (
+                  <View key={restaurant.id} style={styles.recommendationItem}>
+                    <View style={styles.recommendationHeader}>
+                      <Text style={styles.recommendationName}>{restaurant.name}</Text>
+                      {restaurant.rating ? (
+                        <Text style={styles.recommendationRating}>{restaurant.rating.toFixed(1)}★</Text>
+                      ) : null}
+                    </View>
+                    <Text style={styles.recommendationMeta}>{restaurant.address}</Text>
+                    <Text style={styles.recommendationMeta}>
+                      {[
+                        restaurant.travelTimeMinutes
+                          ? `~${restaurant.travelTimeMinutes} min from start`
+                          : null,
+                        restaurant.priceLevel,
+                        restaurant.ratingCount ? `${restaurant.ratingCount} reviews` : null
+                      ]
+                        .filter(Boolean)
+                        .join(" • ") || "Fresh picks nearby"}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.suggestionNote}>
+                We didn’t spot standout restaurants near that window. Try tweaking the route or search again shortly.
+              </Text>
+            )}
+
+            {recommendationsError ? <Text style={styles.inlineError}>{recommendationsError}</Text> : null}
+          </View>
+        ) : null}
 
         {result ? (
           <View style={[styles.statusCard, isCompactWidth && styles.cardCompact]}>
@@ -673,6 +621,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#E0F2FE"
   },
+  clearButton: {
+    marginTop: 12
+  },
   secondaryButtonText: {
     color: "#0F172A",
     fontSize: 14,
@@ -739,16 +690,15 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
+    minWidth: 120,
     backgroundColor: "#F8FAFC",
     borderRadius: 14,
     paddingVertical: 16,
     paddingHorizontal: 12,
-    alignItems: "center",
-    minWidth: 120
+    alignItems: "center"
   },
   statCardSpacing: {
-    marginRight: 12,
-    marginBottom: 0
+    marginRight: 12
   },
   statLabel: {
     color: "#475569",
@@ -760,12 +710,6 @@ const styles = StyleSheet.create({
     color: "#0F172A",
     fontSize: 18,
     fontWeight: "700"
-  },
-  tripControls: {
-    marginTop: 8
-  },
-  tripButton: {
-    marginBottom: 12
   },
   statusCard: {
     backgroundColor: "#FFFFFF",
@@ -787,38 +731,12 @@ const styles = StyleSheet.create({
   },
   detailValue: {
     fontSize: 15,
-    color: "#0F172A",
-    marginBottom: 6
+    color: "#0F172A"
   },
-  speedRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 4
-  },
-  speedLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#334155"
-  },
-  speedButtons: {
-    flexDirection: "row"
-  },
-  speedButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: "#E2E8F0"
-  },
-  speedButtonActive: {
-    backgroundColor: "#1D4ED8"
-  },
-  speedButtonText: {
-    color: "#1E293B",
-    fontWeight: "600"
-  },
-  speedButtonTextActive: {
-    color: "#FFFFFF"
+  detailSubtitle: {
+    fontSize: 14,
+    color: "#475569",
+    marginBottom: 10
   },
   suggestionNote: {
     marginTop: 8,
@@ -851,6 +769,40 @@ const styles = StyleSheet.create({
   suggestionSecondary: {
     fontSize: 12,
     color: "#64748B",
+    marginTop: 2
+  },
+  recommendationList: {
+    marginTop: 8,
+    gap: 12
+  },
+  recommendationItem: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF"
+  },
+  recommendationHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6
+  },
+  recommendationName: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0F172A",
+    flexShrink: 1,
+    paddingRight: 8
+  },
+  recommendationRating: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#1D4ED8"
+  },
+  recommendationMeta: {
+    fontSize: 13,
+    color: "#475569",
     marginTop: 2
   }
 });

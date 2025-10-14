@@ -6,8 +6,8 @@ RouteDash is a travel-aware pickup planner that pairs food orders with your curr
 - **Demo authentication** – simple sign-in flow with persisted session storage.
 - **Route inputs** – capture origin and destination addresses with inline address autocomplete.
 - **Directions fetch** – integrates with the Google Routes API to draw the full route polyline.
-- **Map visualization** – interactive map with origin/destination pins plus a live marker that advances along the path.
-- **Trip simulator** – start, pause, reset controls with adjustable simulation speed and ETA tracking.
+- **Map visualization** – interactive map with origin/destination pins and automatic viewport fitting.
+- **Restaurant recommendations** – surfaces the top pickup-friendly restaurants around the 30–40 minute point of your drive.
 
 ## Getting started
 
@@ -38,5 +38,5 @@ RouteDash is a travel-aware pickup planner that pairs food orders with your curr
 
 ## Next steps
 - Plug in live user location via `expo-location` to anchor simulation to GPS.
-- Extend the planner to surface restaurant candidates based on ETA windows.
+- Enhance the recommendation rules (e.g., dietary filters, multiple time windows, richer place details).
 - Layer in secure authentication (Cognito, Auth0, etc.) instead of the demo credentials.

@@ -4,11 +4,6 @@ import { useCallback, useMemo, useState } from "react";
 import type { Coordinate } from "../utils/polyline";
 import { decodePolyline } from "../utils/polyline";
 
-type Bounds = {
-  northeast: { lat: number; lng: number };
-  southwest: { lat: number; lng: number };
-};
-
 type RouteLeg = {
   distanceText: string;
   distanceMeters: number;
@@ -20,7 +15,6 @@ type RouteLeg = {
 
 export type DirectionsResult = {
   coordinates: Coordinate[];
-  bounds: Bounds;
   leg: RouteLeg;
 };
 
@@ -30,7 +24,7 @@ type UseDirectionsState = {
   result: DirectionsResult | null;
 };
 
-const GOOGLE_ENDPOINT = "https://maps.googleapis.com/maps/api/directions/json";
+const ROUTES_ENDPOINT = "https://routes.googleapis.com/directions/v2:computeRoutes";
 
 const getApiKey = (): string => {
   const extra = Constants?.expoConfig?.extra ?? Constants?.manifest?.extra;
@@ -79,34 +73,89 @@ export const useDirections = () => {
     setState({ isLoading: true, error: null, result: null });
 
     try {
-      const params = new URLSearchParams({
-        origin: inputOrigin,
-        destination: inputDestination,
-        key: apiKey,
-        mode: "driving"
+      const response = await fetch(ROUTES_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Goog-Api-Key": apiKey,
+          "X-Goog-FieldMask":
+            "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs.duration,routes.legs.localizedValues.duration,routes.legs.localizedValues.distance,routes.legs.distanceMeters"
+        },
+        body: JSON.stringify({
+          origin: {
+            address: inputOrigin
+          },
+          destination: {
+            address: inputDestination
+          },
+          travelMode: "DRIVE",
+          routingPreference: "TRAFFIC_AWARE",
+          computeAlternativeRoutes: false,
+          routeModifiers: {
+            avoidTolls: false,
+            avoidHighways: false,
+            avoidFerries: false
+          },
+          languageCode: "en-US",
+          units: "IMPERIAL"
+        })
       });
 
-      const response = await fetch(`${GOOGLE_ENDPOINT}?${params.toString()}`);
-      const payload = await response.json();
-
-      if (payload.status !== "OK" || !payload.routes?.length) {
-        throw new Error(payload.error_message ?? "Directions request failed");
+      if (!response.ok) {
+        const errorPayload = await response.json().catch(() => ({}));
+        throw new Error(errorPayload.error?.message ?? "Directions request failed");
       }
 
-      const [route] = payload.routes;
-      const [leg] = route.legs;
+      const payload = await response.json();
+      const [route] = payload.routes ?? [];
+      if (!route) {
+        throw new Error("No routes found for that trip");
+      }
 
-      const coordinates = decodePolyline(route.overview_polyline.points);
+      const [leg] = route.legs ?? [];
+      const encodedPolyline = route.polyline?.encodedPolyline;
+      const coordinates = encodedPolyline ? decodePolyline(encodedPolyline) : [];
+
+      const parseDurationSeconds = (duration: any): number => {
+        if (!duration) {
+          return 0;
+        }
+        if (typeof duration === "string") {
+          const normalized = duration.endsWith("s") ? duration.slice(0, -1) : duration;
+          const parsed = Number(normalized);
+          return Number.isFinite(parsed) ? parsed : 0;
+        }
+        if (typeof duration === "object" && typeof duration.seconds !== "undefined") {
+          const seconds = duration.seconds;
+          if (typeof seconds === "string") {
+            const parsed = Number(seconds);
+            return Number.isFinite(parsed) ? parsed : 0;
+          }
+          if (typeof seconds === "number") {
+            return seconds;
+          }
+        }
+        if (typeof duration === "number") {
+          return duration;
+        }
+        return 0;
+      };
+
+      const durationSeconds = parseDurationSeconds(leg?.duration);
+      const distanceMeters =
+        typeof leg?.distanceMeters === "number" && leg.distanceMeters > 0
+          ? leg.distanceMeters
+          : route.distanceMeters ?? 0;
+
       const nextResult: DirectionsResult = {
         coordinates,
-        bounds: route.bounds,
         leg: {
-          distanceText: leg.distance?.text ?? "—",
-          distanceMeters: leg.distance?.value ?? 0,
-          durationText: leg.duration?.text ?? "—",
-          durationSeconds: leg.duration?.value ?? 0,
-          startAddress: leg.start_address ?? inputOrigin,
-          endAddress: leg.end_address ?? inputDestination
+          distanceText: leg?.localizedValues?.distance?.text ?? "—",
+          distanceMeters,
+          durationText: leg?.localizedValues?.duration?.text ?? "—",
+          durationSeconds,
+          startAddress: inputOrigin,
+          endAddress: inputDestination
         }
       };
 
@@ -122,7 +171,7 @@ export const useDirections = () => {
       setState({
         isLoading: false,
         error:
-          "We hit an issue fetching directions. Double-check the addresses and try again in a moment.",
+          "We hit an issue fetching directions. Confirm the Google Routes API is enabled for your key and try again.",
         result: null
       });
 
