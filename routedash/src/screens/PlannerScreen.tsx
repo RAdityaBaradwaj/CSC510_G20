@@ -10,12 +10,17 @@ import {
   useWindowDimensions
 } from "react-native";
 import Slider from "@react-native-community/slider";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import MapView, { LatLng, Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../context/AuthContext";
 import { useDirections } from "../hooks/useDirections";
 import { PlaceSuggestion, usePlacesAutocomplete } from "../hooks/usePlacesAutocomplete";
 import { useRestaurantRecommendations } from "../hooks/useRestaurantRecommendations";
+import type { Restaurant as RecommendedRestaurant } from "../hooks/useRestaurantRecommendations";
+import { RootStackParamList, RestaurantParam } from "../navigation/types";
+import { restaurants as mockRestaurants } from "../restaurants";
 
 const DEFAULT_REGION = {
   latitude: 37.7749,
@@ -63,6 +68,7 @@ const computeRegionFromCoordinates = (points: LatLng[]) => {
 
 export const PlannerScreen = () => {
   const { user, logout } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {
     error: directionsError,
     fetchRoute,
@@ -76,7 +82,7 @@ export const PlannerScreen = () => {
     error: recommendationsError,
     fetchRestaurants,
     isLoading: isRecommendationsLoading,
-    items: restaurants,
+    items: restaurantRecommendations,
     targetTravelMinutes,
     reset: resetRecommendations
   } = useRestaurantRecommendations();
@@ -240,9 +246,9 @@ export const PlannerScreen = () => {
     if (isRecommendationsLoading) {
       return "Searching for restaurants 30–40 minutes ahead…";
     }
-    if (restaurants.length) {
+    if (restaurantRecommendations.length) {
       const minuteMark = targetTravelMinutes ?? sliderValue;
-      return `Here are ${restaurants.length} restaurants near the ${minuteMark}-minute mark of your trip.`;
+      return `Here are ${restaurantRecommendations.length} restaurants near the ${minuteMark}-minute mark of your trip.`;
     }
     if (recommendationsError) {
       return "We couldn't load restaurant ideas just now. Try again in a moment.";
@@ -254,12 +260,31 @@ export const PlannerScreen = () => {
   }, [
     isDirectionsLoading,
     isRecommendationsLoading,
-    restaurants.length,
+    restaurantRecommendations.length,
     targetTravelMinutes,
     recommendationsError,
     isRoutePlotted,
     sliderValue
   ]);
+
+  const handleOpenRestaurantMenu = (restaurant: RecommendedRestaurant, index: number) => {
+    if (!mockRestaurants.length) {
+      return;
+    }
+
+    const fallback = mockRestaurants[index % mockRestaurants.length];
+    const payload: RestaurantParam = {
+      id: fallback.id,
+      name: restaurant.name,
+      cuisine: fallback.cuisine,
+      rating: restaurant.rating ?? fallback.rating,
+      etaMinutes: restaurant.travelTimeMinutes ?? fallback.etaMinutes,
+      priceLevel: restaurant.priceLevel ?? fallback.priceLevel,
+      location: restaurant.address ?? fallback.location
+    };
+
+    navigation.navigate("Menu", { restaurant: payload });
+  };
 
   const canPreview =
     Boolean(origin.trim()) && Boolean(destination.trim()) && !isDirectionsLoading;
@@ -290,13 +315,20 @@ export const PlannerScreen = () => {
       </View>
 
       <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          isCompactHeight && styles.scrollContentCompact,
-          { paddingHorizontal: isCompactWidth ? 16 : 24 }
-        ]}
-        keyboardShouldPersistTaps="handled"
-      >
+  style={{ flex: 1 }}
+  contentContainerStyle={[
+    styles.scrollContent,
+    isCompactHeight && styles.scrollContentCompact,
+    { 
+      paddingHorizontal: isCompactWidth ? 16 : 24,
+      paddingBottom: 120,  // ensures space for bottom content
+      flexGrow: 1          // enables proper vertical scrolling
+    }
+  ]}
+  showsVerticalScrollIndicator={false}
+  keyboardShouldPersistTaps="handled"
+>
+
         <View style={[styles.formCard, isCompactWidth && styles.cardCompact]}>
           <Text style={styles.sectionTitle}>Route details</Text>
 
@@ -478,7 +510,9 @@ export const PlannerScreen = () => {
             <View style={styles.statCard}>
               <Text style={styles.statLabel}>Top picks</Text>
               <Text style={styles.statValue}>
-                {isRecommendationsLoading ? "…" : restaurants.length || (isRoutePlotted ? "0" : "—")}
+                {isRecommendationsLoading
+                  ? "…"
+                  : restaurantRecommendations.length || (isRoutePlotted ? "0" : "—")}
               </Text>
             </View>
           </View>
@@ -495,10 +529,14 @@ export const PlannerScreen = () => {
 
             {isRecommendationsLoading ? (
               <Text style={styles.suggestionNote}>Finding popular restaurants near your route…</Text>
-            ) : restaurants.length ? (
+            ) : restaurantRecommendations.length ? (
               <View style={styles.recommendationList}>
-                {restaurants.map((restaurant) => (
-                  <View key={restaurant.id} style={styles.recommendationItem}>
+                {restaurantRecommendations.map((restaurant, index) => (
+                  <Pressable
+                    key={restaurant.id}
+                    style={styles.recommendationItem}
+                    onPress={() => handleOpenRestaurantMenu(restaurant, index)}
+                  >
                     <View style={styles.recommendationHeader}>
                       <Text style={styles.recommendationName}>{restaurant.name}</Text>
                       {restaurant.rating ? (
@@ -517,7 +555,7 @@ export const PlannerScreen = () => {
                         .filter(Boolean)
                         .join(" • ") || "Fresh picks nearby"}
                     </Text>
-                  </View>
+                  </Pressable>
                 ))}
               </View>
             ) : (

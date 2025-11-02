@@ -4,14 +4,14 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { LoginScreen } from "./src/screens/LoginScreen";
-import { PlannerScreen } from "./src/screens/PlannerScreen";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
-
-export type RootStackParamList = {
-  Login: undefined;
-  Planner: undefined;
-};
+import { CheckoutScreen } from "./src/screens/CheckoutScreen";
+import { LoginScreen } from "./src/screens/LoginScreen";
+import { MenuScreen } from "./src/screens/MenuScreen";
+import { OrderStatusScreen } from "./src/screens/OrderStatusScreen";
+import { PlannerScreen } from "./src/screens/PlannerScreen";
+import { RestaurantsScreen } from "./src/screens/RestaurantsScreen";
+import { RootStackParamList } from "./src/navigation/types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -29,6 +29,29 @@ const AuthenticatedNavigator = () => (
       name="Planner"
       component={PlannerScreen}
       options={{ headerShown: false, animation: "fade_from_bottom" }}
+    />
+    <Stack.Screen
+      name="Restaurants"
+      component={RestaurantsScreen}
+      options={{ headerTitle: "Restaurants", animation: "slide_from_right" }}
+    />
+    <Stack.Screen
+      name="Menu"
+      component={MenuScreen}
+      options={({ route }) => ({
+        headerTitle: route.params.restaurant.name,
+        animation: "slide_from_right"
+      })}
+    />
+    <Stack.Screen
+      name="Checkout"
+      component={CheckoutScreen}
+      options={{ headerTitle: "Checkout", animation: "slide_from_right" }}
+    />
+    <Stack.Screen
+      name="OrderStatus"
+      component={OrderStatusScreen}
+      options={{ headerTitle: "Order Status", animation: "slide_from_right" }}
     />
   </Stack.Navigator>
 );
