@@ -2,8 +2,11 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
+
 import { env } from "./env";
-import { httpLogger } from "./logger";
+import { HttpError } from "./errors/HttpError";
+import { httpLogger, log } from "./logger";
+import { authRouter } from "./routes/auth";
 import { healthRouter } from "./routes/health";
 
 export const createApp = () => {
@@ -21,15 +24,25 @@ export const createApp = () => {
   app.use(cookieParser());
 
   app.use("/health", healthRouter);
+  app.use("/api/auth", authRouter);
 
   app.use((req, res) => {
     res.status(404).json({ error: "Not found" });
   });
 
   app.use(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    (err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-      res.status(500).json({ error: "Internal server error" });
+    (
+      err: Error,
+      _req: express.Request,
+      res: express.Response,
+      _next: express.NextFunction
+    ) => {
+      if (err instanceof HttpError) {
+        return res.status(err.status).json({ error: err.message });
+      }
+
+      log.error("Unhandled error", { message: err.message, stack: err.stack });
+      return res.status(500).json({ error: "Internal server error" });
     }
   );
 
