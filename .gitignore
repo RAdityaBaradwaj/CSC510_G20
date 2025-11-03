@@ -14,8 +14,12 @@ proj2/routedash/build/
 # Environment configuration
 proj2/routedash/.env
 proj2/routedash/.env.local
+proj2/server/.env
 
 # Logs
 proj2/routedash/npm-debug.log*
 proj2/routedash/yarn-error.log
 proj2/routedash/*.log
+proj2/server/npm-debug.log*
+proj2/server/yarn-error.log
+proj2/server/*.log
