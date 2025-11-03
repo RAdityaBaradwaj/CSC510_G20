@@ -41,3 +41,4 @@ RouteDash is a travel-aware pickup planner that pairs food orders with your curr
 - Plug in live user location via `expo-location` to anchor simulation to GPS.
 - Enhance the recommendation rules (e.g., dietary filters, multiple time windows, richer place details).
 - Layer in secure authentication (Cognito, Auth0, etc.) instead of the demo credentials.
+- **API service** – Express/TypeScript server scaffold under `server/` with health check and tooling (tsconfig, ESLint, Vitest). Copy `.env.example` to `.env`, set a strong `JWT_SECRET` (and database URL when ready), run `npm install`, then `npm run dev` inside `server/` to start the API at `http://localhost:4000`.

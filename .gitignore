@@ -2,19 +2,20 @@
 .DS_Store
 
 # Node/Expo generated folders
-routedash/node_modules/
-routedash/.expo/
-routedash/.expo-shared/
+proj2/routedash/node_modules/
+proj2/server/node_modules/
+proj2/routedash/.expo/
+proj2/routedash/.expo-shared/
 
 # Build outputs
-routedash/dist/
-routedash/build/
+proj2/routedash/dist/
+proj2/routedash/build/
 
 # Environment configuration
-routedash/.env
-routedash/.env.local
+proj2/routedash/.env
+proj2/routedash/.env.local
 
 # Logs
-routedash/npm-debug.log*
-routedash/yarn-error.log
-routedash/*.log
+proj2/routedash/npm-debug.log*
+proj2/routedash/yarn-error.log
+proj2/routedash/*.log
