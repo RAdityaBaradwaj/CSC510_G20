@@ -13,31 +13,33 @@ enum UserRole {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  passwordHash String
-  role         UserRole  @default(CUSTOMER)
-  name         String
-  restaurants  Restaurant[]
-  menuItemLogs MenuItemChangeLog[] @relation("MenuItemChangeLogUser")
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id             String                @id @default(uuid())
+  email          String                @unique
+  passwordHash   String
+  role           UserRole              @default(CUSTOMER)
+  name           String
+  restaurants    Restaurant[]
+  menuItemLogs   MenuItemChangeLog[]   @relation("MenuItemChangeLogUser")
+  customerOrders Order[]               @relation("CustomerOrders")
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
 }
 
 model Restaurant {
-  id           String         @id @default(uuid())
-  ownerUser    User           @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  id           String               @id @default(uuid())
+  ownerUser    User                 @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
   ownerUserId  String
   name         String
   address      String
   latitude     Float?
   longitude    Float?
-  isActive     Boolean        @default(true)
+  isActive     Boolean              @default(true)
   sections     MenuSection[]
   menuItems    MenuItem[]
   changeLogs   MenuItemChangeLog[]
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  orders       Order[]              @relation("RestaurantOrders")
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
 
   @@index([ownerUserId])
   @@index([isActive])
@@ -67,6 +69,7 @@ model MenuItem {
   isAvailable   Boolean       @default(true)
   tags          String[]      @default([])
   changeLogs    MenuItemChangeLog[]
+  orderItems    OrderItem[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
@@ -97,4 +100,42 @@ model MenuItemChangeLog {
   @@index([restaurantId])
   @@index([menuItemId])
   @@index([action])
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  READY
+  COMPLETED
+  CANCELED
+}
+
+model Order {
+  id             String      @id @default(uuid())
+  customer       User        @relation("CustomerOrders", fields: [customerId], references: [id], onDelete: Cascade)
+  customerId     String
+  restaurant     Restaurant  @relation("RestaurantOrders", fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId   String
+  status         OrderStatus @default(PENDING)
+  pickupEtaMin   Int
+  routeOrigin    String
+  routeDestination String
+  totalCents     Int
+  items          OrderItem[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([customerId])
+  @@index([restaurantId])
+  @@index([status])
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId     String
+  menuItem    MenuItem @relation(fields: [menuItemId], references: [id])
+  menuItemId  String
+  quantity    Int      @default(1)
+  priceCents  Int
 }

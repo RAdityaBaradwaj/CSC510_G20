@@ -1,5 +1,6 @@
-import Constants from "expo-constants";
 import { useCallback, useMemo, useState } from "react";
+
+import { apiFetch } from "../api/client";
 import type { Coordinate } from "../utils/polyline";
 
 export type Restaurant = {
@@ -21,14 +22,26 @@ type RecommendationState = {
   targetTravelMinutes: number | null;
 };
 
-const PLACES_ENDPOINT = "https://places.googleapis.com/v1/places:searchNearby";
-
-const getApiKey = (): string => {
-  const extra = Constants?.expoConfig?.extra ?? Constants?.manifest?.extra;
-  return (extra?.googleMapsApiKey as string | undefined) ?? "";
-};
-
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+
+const toRadians = (value: number) => (value * Math.PI) / 180;
+
+const distanceInMeters = (a: Coordinate, b: Coordinate) => {
+  const R = 6371e3;
+  const dLat = toRadians(b.latitude - a.latitude);
+  const dLng = toRadians(b.longitude - a.longitude);
+  const lat1 = toRadians(a.latitude);
+  const lat2 = toRadians(b.latitude);
+
+  const sinLat = Math.sin(dLat / 2);
+  const sinLng = Math.sin(dLng / 2);
+
+  const c =
+    sinLat * sinLat + Math.cos(lat1) * Math.cos(lat2) * sinLng * sinLng;
+  const d = 2 * Math.atan2(Math.sqrt(c), Math.sqrt(1 - c));
+
+  return R * d;
+};
 
 const pickTargetCoordinate = (
   coordinates: Coordinate[],
@@ -61,21 +74,6 @@ const pickTargetCoordinate = (
   };
 };
 
-const formatPriceLevel = (priceLevel?: string) => {
-  if (!priceLevel) {
-    return undefined;
-  }
-
-  const map: Record<string, string> = {
-    PRICE_LEVEL_INEXPENSIVE: "$",
-    PRICE_LEVEL_MODERATE: "$$",
-    PRICE_LEVEL_EXPENSIVE: "$$$",
-    PRICE_LEVEL_VERY_EXPENSIVE: "$$$$"
-  };
-
-  return map[priceLevel] ?? undefined;
-};
-
 export const useRestaurantRecommendations = () => {
   const [{ isLoading, error, items, targetTravelMinutes }, setState] = useState<RecommendationState>({
     isLoading: false,
@@ -97,18 +95,6 @@ export const useRestaurantRecommendations = () => {
         return;
       }
 
-      const apiKey = getApiKey();
-      if (!apiKey) {
-        setState({
-          isLoading: false,
-          error:
-            "Missing Google Maps API key. Add GOOGLE_MAPS_API_KEY to your .env file to get restaurant suggestions.",
-          items: [],
-          targetTravelMinutes: null
-        });
-        return;
-      }
-
       const target = pickTargetCoordinate(coordinates, durationSeconds, preferredMinuteMark);
       if (!target) {
         setState({
@@ -124,53 +110,37 @@ export const useRestaurantRecommendations = () => {
       setState({ isLoading: true, error: null, items: [], targetTravelMinutes: target.minuteMark });
 
       try {
-        const response = await fetch(PLACES_ENDPOINT, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Goog-Api-Key": apiKey,
-            "X-Goog-FieldMask":
-              "places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.priceLevel,places.primaryType,places.accessibilityOptions,places.location,places.currentOpeningHours,places.photos"
-          },
-          body: JSON.stringify({
-            includedTypes: ["restaurant"],
-            maxResultCount: 10,
-            locationRestriction: {
-              circle: {
-                center: {
-                  latitude: target.coordinate.latitude,
-                  longitude: target.coordinate.longitude
-                },
-                radius: 5000
-              }
-            },
-            rankPreference: "POPULARITY"
+        const { restaurants } = await apiFetch<{
+          restaurants: {
+            id: string;
+            name: string;
+            address: string;
+            latitude: number | null;
+            longitude: number | null;
+          }[];
+        }>("/api/restaurants", { requireAuth: false });
+
+        const nextItems: Restaurant[] = restaurants
+          .map((restaurant) => {
+            const location =
+              restaurant.latitude && restaurant.longitude
+                ? { latitude: restaurant.latitude, longitude: restaurant.longitude }
+                : target.coordinate;
+            const distance = distanceInMeters(target.coordinate, location);
+            return {
+              id: restaurant.id,
+              name: restaurant.name,
+              rating: null,
+              ratingCount: null,
+              travelTimeMinutes: target.minuteMark,
+              address: restaurant.address,
+              location,
+              distance
+            };
           })
-        });
-
-        if (!response.ok) {
-          const payload = await response.json().catch(() => ({}));
-          throw new Error(payload.error?.message ?? "Failed to fetch restaurant suggestions");
-        }
-
-        const payload = await response.json();
-        const places = payload.places ?? [];
-
-        const nextItems: Restaurant[] = places.map((place: any) => ({
-          id: place.id,
-          name: place.displayName?.text ?? "Untitled Restaurant",
-          rating: typeof place.rating === "number" ? place.rating : null,
-          ratingCount:
-            typeof place.userRatingCount === "number" ? place.userRatingCount : null,
-          travelTimeMinutes: target.minuteMark,
-          address: place.formattedAddress ?? "Address unavailable",
-          priceLevel: formatPriceLevel(place.priceLevel),
-          iconUrl: place.photos?.[0]?.authorAttributions?.[0]?.photoUri,
-          location: {
-            latitude: place.location?.latitude ?? target.coordinate.latitude,
-            longitude: place.location?.longitude ?? target.coordinate.longitude
-          }
-        }));
+          .filter((restaurant) => restaurant.distance <= 8000 || restaurant.distance === 0)
+          .slice(0, 10)
+          .map(({ distance, ...rest }) => rest);
 
         setState({
           isLoading: false,

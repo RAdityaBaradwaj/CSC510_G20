@@ -50,6 +50,16 @@ Early-stage Express + TypeScript backend that will power authentication, restaur
 - `prisma/schema.prisma` – database models.
 - `prisma/seed.ts` – demo users, restaurants, menu sections/items.
 
+## Seeded accounts
+
+After running `npm run db:seed`, you get:
+
+| Role       | Email                 | Password      |
+|------------|-----------------------|---------------|
+| Customer   | customer@example.com  | password123!  |
+| Merchant 1 | merchant1@example.com | password123!  |
+| Merchant 2 | merchant2@example.com | password123!  |
+
 ## Next steps
 
 - Implement auth routes (`/api/auth/*`) using JWT cookies.

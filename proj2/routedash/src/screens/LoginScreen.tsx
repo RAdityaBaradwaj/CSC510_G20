@@ -10,20 +10,29 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
 import { useAuth } from "../context/AuthContext";
 
+type Mode = "login" | "register";
+type Role = "CUSTOMER" | "RESTAURANT";
+
 const INITIAL_FORM = {
-  email: "demo@routedash.com",
-  password: "routedash123"
+  name: "",
+  email: "customer@example.com",
+  password: "password123!",
+  restaurantName: "",
+  address: ""
 };
 
 export const LoginScreen = () => {
-  const { login } = useAuth();
+  const { login, registerCustomer, registerRestaurant } = useAuth();
+  const [mode, setMode] = useState<Mode>("login");
+  const [role, setRole] = useState<Role>("CUSTOMER");
   const [form, setForm] = useState(INITIAL_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleChange = (key: "email" | "password", value: string) => {
+  const handleChange = (key: keyof typeof INITIAL_FORM, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -32,17 +41,34 @@ export const LoginScreen = () => {
       return;
     }
 
-    setError(null);
-    setIsSubmitting(true);
-    const ok = await login(form);
-    setIsSubmitting(false);
-
-    if (!ok) {
-      setError("We couldn't verify those credentials. Use the demo account above to preview the app.");
+    try {
+      setError(null);
+      setIsSubmitting(true);
+      if (mode === "login") {
+        await login({ email: form.email, password: form.password });
+      } else if (role === "CUSTOMER") {
+        await registerCustomer({ name: form.name || "Traveler", email: form.email, password: form.password });
+      } else {
+        await registerRestaurant({
+          name: form.name || "Owner",
+          email: form.email,
+          password: form.password,
+          restaurantName: form.restaurantName || "RouteDash Kitchen",
+          address: form.address || "123 Main St"
+        });
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const canSubmit = Boolean(form.email.trim()) && Boolean(form.password.trim()) && !isSubmitting;
+  const canSubmit =
+    Boolean(form.email.trim()) &&
+    Boolean(form.password.trim()) &&
+    (mode === "login" || (role === "CUSTOMER" ? Boolean((form.name || form.email).trim()) : Boolean(form.restaurantName.trim()))) &&
+    !isSubmitting;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -53,9 +79,52 @@ export const LoginScreen = () => {
       >
         <View style={styles.card}>
           <Text style={styles.title}>Welcome to RouteDash</Text>
-          <Text style={styles.subtitle}>
-            Route-aware pickup planning so your meal is hot, fresh, and ready when you arrive.
-          </Text>
+          <Text style={styles.subtitle}>{mode === "login" ? "Sign in to plan your route or manage your restaurant." : "Create an account to start ordering or managing menus."}</Text>
+
+          <View style={styles.toggleRow}>
+            <Pressable
+              style={[styles.toggleButton, mode === "login" && styles.toggleActive]}
+              onPress={() => setMode("login")}
+            >
+              <Text style={mode === "login" ? styles.toggleTextActive : styles.toggleText}>Login</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.toggleButton, mode === "register" && styles.toggleActive]}
+              onPress={() => setMode("register")}
+            >
+              <Text style={mode === "register" ? styles.toggleTextActive : styles.toggleText}>Register</Text>
+            </Pressable>
+          </View>
+
+          {mode === "register" && (
+            <View style={styles.toggleRow}>
+              <Pressable
+                style={[styles.toggleButton, role === "CUSTOMER" && styles.toggleActive]}
+                onPress={() => setRole("CUSTOMER")}
+              >
+                <Text style={role === "CUSTOMER" ? styles.toggleTextActive : styles.toggleText}>Customer</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.toggleButton, role === "RESTAURANT" && styles.toggleActive]}
+                onPress={() => setRole("RESTAURANT")}
+              >
+                <Text style={role === "RESTAURANT" ? styles.toggleTextActive : styles.toggleText}>Restaurant</Text>
+              </Pressable>
+            </View>
+          )}
+
+          {mode === "register" && (
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>{role === "RESTAURANT" ? "Owner name" : "Name"}</Text>
+              <TextInput
+                style={styles.input}
+                value={form.name}
+                autoCapitalize="words"
+                placeholder="Taylor Jordan"
+                onChangeText={(value) => handleChange("name", value)}
+              />
+            </View>
+          )}
 
           <View style={styles.formGroup}>
             <Text style={styles.label}>Email</Text>
@@ -96,12 +165,28 @@ export const LoginScreen = () => {
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          <View style={styles.demoCallout}>
-            <Text style={styles.demoTitle}>Demo access</Text>
-            <Text style={styles.demoBody}>
-              Use demo@routedash.com with password routedash123 to preview the RouteDash trip planner.
-            </Text>
-          </View>
+          {mode === "register" && role === "RESTAURANT" && (
+            <>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Restaurant name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={form.restaurantName}
+                  placeholder="RouteDash Kitchen"
+                  onChangeText={(value) => handleChange("restaurantName", value)}
+                />
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Restaurant address</Text>
+                <TextInput
+                  style={styles.input}
+                  value={form.address}
+                  placeholder="123 Main St, Raleigh NC"
+                  onChangeText={(value) => handleChange("address", value)}
+                />
+              </View>
+            </>
+          )}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -140,6 +225,25 @@ const styles = StyleSheet.create({
     marginBottom: 28,
     lineHeight: 22
   },
+  toggleRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 16
+  },
+  toggleButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#CBD5F5",
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: "center"
+  },
+  toggleActive: {
+    backgroundColor: "#2563EB",
+    borderColor: "#2563EB"
+  },
+  toggleText: { color: "#0F172A", fontWeight: "600" },
+  toggleTextActive: { color: "#FFF", fontWeight: "700" },
   formGroup: {
     marginBottom: 18
   },

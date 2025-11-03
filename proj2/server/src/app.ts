@@ -8,6 +8,8 @@ import { HttpError } from "./errors/HttpError";
 import { httpLogger, log } from "./logger";
 import { authRouter } from "./routes/auth";
 import { healthRouter } from "./routes/health";
+import { restaurantRouter } from "./routes/restaurants";
+import { ordersRouter } from "./routes/orders";
 
 export const createApp = () => {
   const app = express();
@@ -25,6 +27,8 @@ export const createApp = () => {
 
   app.use("/health", healthRouter);
   app.use("/api/auth", authRouter);
+  app.use("/api/restaurants", restaurantRouter);
+  app.use("/api/orders", ordersRouter);
 
   app.use((req, res) => {
     res.status(404).json({ error: "Not found" });

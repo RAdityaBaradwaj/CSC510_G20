@@ -43,6 +43,7 @@ const config: ExpoConfig = {
   },
   extra: {
     googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY ?? "",
+    apiUrl: process.env.API_URL ?? "http://localhost:4000",
     eas: {
       projectId: "00000000-0000-4000-8000-000000000000"
     }

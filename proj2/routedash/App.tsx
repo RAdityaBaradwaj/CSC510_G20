@@ -4,10 +4,12 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { CheckoutScreen } from "./src/screens/CheckoutScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
 import { MenuScreen } from "./src/screens/MenuScreen";
+import { MerchantDashboardScreen } from "./src/screens/MerchantDashboardScreen";
 import { OrderStatusScreen } from "./src/screens/OrderStatusScreen";
 import { PlannerScreen } from "./src/screens/PlannerScreen";
 import { RestaurantsScreen } from "./src/screens/RestaurantsScreen";
@@ -23,7 +25,7 @@ const AppTheme = {
   }
 };
 
-const AuthenticatedNavigator = () => (
+const CustomerNavigator = () => (
   <Stack.Navigator initialRouteName="Planner">
     <Stack.Screen
       name="Planner"
@@ -56,6 +58,29 @@ const AuthenticatedNavigator = () => (
   </Stack.Navigator>
 );
 
+const MerchantNavigator = () => (
+  <Stack.Navigator initialRouteName="MerchantDashboard">
+    <Stack.Screen
+      name="MerchantDashboard"
+      component={MerchantDashboardScreen}
+      options={{ headerTitle: "Merchant Dashboard", animation: "fade_from_bottom" }}
+    />
+    <Stack.Screen
+      name="Restaurants"
+      component={RestaurantsScreen}
+      options={{ headerTitle: "Restaurants", animation: "slide_from_right" }}
+    />
+    <Stack.Screen
+      name="Menu"
+      component={MenuScreen}
+      options={({ route }) => ({
+        headerTitle: route.params.restaurant.name,
+        animation: "slide_from_right"
+      })}
+    />
+  </Stack.Navigator>
+);
+
 const PublicNavigator = () => (
   <Stack.Navigator initialRouteName="Login">
     <Stack.Screen
@@ -67,7 +92,7 @@ const PublicNavigator = () => (
 );
 
 const Router = () => {
-  const { isAuthenticated, isHydrating } = useAuth();
+  const { isAuthenticated, isHydrating, user } = useAuth();
 
   useEffect(() => {
     // We can potentially perform analytics or warmups when auth state changes.
@@ -90,7 +115,11 @@ const Router = () => {
 
   return (
     <NavigationContainer theme={AppTheme}>
-      {isAuthenticated ? <AuthenticatedNavigator /> : <PublicNavigator />}
+      {isAuthenticated ? (
+        user?.role === "RESTAURANT" ? <MerchantNavigator /> : <CustomerNavigator />
+      ) : (
+        <PublicNavigator />
+      )}
     </NavigationContainer>
   );
 };

@@ -14,13 +14,13 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import MapView, { LatLng, Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
+
 import { useAuth } from "../context/AuthContext";
 import { useDirections } from "../hooks/useDirections";
 import { PlaceSuggestion, usePlacesAutocomplete } from "../hooks/usePlacesAutocomplete";
 import { useRestaurantRecommendations } from "../hooks/useRestaurantRecommendations";
 import type { Restaurant as RecommendedRestaurant } from "../hooks/useRestaurantRecommendations";
-import { RootStackParamList, RestaurantParam } from "../navigation/types";
-import { restaurants as mockRestaurants } from "../restaurants";
+import { RootStackParamList, RestaurantSummary, TripContext } from "../navigation/types";
 
 const DEFAULT_REGION = {
   latitude: 37.7749,
@@ -117,6 +117,15 @@ export const PlannerScreen = () => {
   const sliderValue = useMemo(
     () => Math.min(Math.max(mealWindow, sliderMin), sliderMax),
     [mealWindow, sliderMax, sliderMin]
+  );
+
+  const tripContext: TripContext = useMemo(
+    () => ({
+      origin,
+      destination,
+      pickupEtaMin: sliderValue
+    }),
+    [destination, origin, sliderValue]
   );
 
   useEffect(() => {
@@ -267,23 +276,20 @@ export const PlannerScreen = () => {
     sliderValue
   ]);
 
-  const handleOpenRestaurantMenu = (restaurant: RecommendedRestaurant, index: number) => {
-    if (!mockRestaurants.length) {
+  const handleOpenRestaurantMenu = (restaurant: RecommendedRestaurant) => {
+    if (!origin || !destination) {
       return;
     }
 
-    const fallback = mockRestaurants[index % mockRestaurants.length];
-    const payload: RestaurantParam = {
-      id: fallback.id,
+    const summary: RestaurantSummary = {
+      id: restaurant.id,
       name: restaurant.name,
-      cuisine: fallback.cuisine,
-      rating: restaurant.rating ?? fallback.rating,
-      etaMinutes: restaurant.travelTimeMinutes ?? fallback.etaMinutes,
-      priceLevel: restaurant.priceLevel ?? fallback.priceLevel,
-      location: restaurant.address ?? fallback.location
+      address: restaurant.address,
+      latitude: restaurant.location.latitude,
+      longitude: restaurant.location.longitude
     };
 
-    navigation.navigate("Menu", { restaurant: payload });
+    navigation.navigate("Menu", { restaurant: summary, trip: tripContext });
   };
 
   const canPreview =
@@ -531,29 +537,20 @@ export const PlannerScreen = () => {
               <Text style={styles.suggestionNote}>Finding popular restaurants near your route…</Text>
             ) : restaurantRecommendations.length ? (
               <View style={styles.recommendationList}>
-                {restaurantRecommendations.map((restaurant, index) => (
+                {restaurantRecommendations.map((restaurant) => (
                   <Pressable
                     key={restaurant.id}
                     style={styles.recommendationItem}
-                    onPress={() => handleOpenRestaurantMenu(restaurant, index)}
+                    onPress={() => handleOpenRestaurantMenu(restaurant)}
                   >
                     <View style={styles.recommendationHeader}>
                       <Text style={styles.recommendationName}>{restaurant.name}</Text>
-                      {restaurant.rating ? (
-                        <Text style={styles.recommendationRating}>{restaurant.rating.toFixed(1)}★</Text>
-                      ) : null}
                     </View>
                     <Text style={styles.recommendationMeta}>{restaurant.address}</Text>
                     <Text style={styles.recommendationMeta}>
-                      {[
-                        restaurant.travelTimeMinutes
-                          ? `~${restaurant.travelTimeMinutes} min from start`
-                          : null,
-                        restaurant.priceLevel,
-                        restaurant.ratingCount ? `${restaurant.ratingCount} reviews` : null
-                      ]
-                        .filter(Boolean)
-                        .join(" • ") || "Fresh picks nearby"}
+                      {restaurant.travelTimeMinutes
+                        ? `~${restaurant.travelTimeMinutes} min from start`
+                        : "Along your current route"}
                     </Text>
                   </Pressable>
                 ))}
@@ -565,6 +562,13 @@ export const PlannerScreen = () => {
             )}
 
             {recommendationsError ? <Text style={styles.inlineError}>{recommendationsError}</Text> : null}
+            <Pressable
+              style={[styles.secondaryButton, styles.browseButton, (!origin || !destination) && styles.disabled]}
+              disabled={!origin || !destination}
+              onPress={() => navigation.navigate("Restaurants", { trip: tripContext })}
+            >
+              <Text style={styles.secondaryButtonText}>Browse all registered restaurants</Text>
+            </Pressable>
           </View>
         ) : null}
 
@@ -769,6 +773,9 @@ const styles = StyleSheet.create({
     color: "#0F172A",
     fontSize: 14,
     fontWeight: "600"
+  },
+  browseButton: {
+    marginTop: 12
   },
   disabled: {
     opacity: 0.55
