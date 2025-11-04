@@ -34,10 +34,15 @@ export type CartItem = {
   quantity: number;
 };
 
+export type OrderStatusValue = "PENDING" | "PREPARING" | "READY" | "COMPLETED" | "CANCELED";
+
 export type OrderSummary = {
   id: string;
+  status: OrderStatusValue;
   totalCents: number;
   pickupEtaMin: number;
+  routeOrigin: string;
+  routeDestination: string;
   items: Array<{ id: string; menuItemId: string; quantity: number; priceCents: number; name?: string }>;
   restaurant: RestaurantSummary;
 };

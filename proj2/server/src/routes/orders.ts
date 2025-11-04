@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 
 import { requireAuth, requireRole } from "../middleware/auth";
-import { createOrder, listOrdersForUser } from "../services/orderService";
+import { createOrder, getOrderForCustomer, listOrdersForUser } from "../services/orderService";
 
 const orderPayload = z.object({
   restaurantId: z.string().uuid(),
@@ -19,6 +19,9 @@ const orderPayload = z.object({
   routeDestination: z.string().min(1)
 });
 
+const orderIdParam = z.object({
+  orderId: z.string().uuid()
+});
 export const ordersRouter = Router();
 
 ordersRouter.post("/", requireAuth, requireRole("CUSTOMER"), async (req, res, next) => {
@@ -35,6 +38,16 @@ ordersRouter.get("/", requireAuth, requireRole("CUSTOMER"), async (req, res, nex
   try {
     const orders = await listOrdersForUser(req.user!.id);
     res.json({ orders });
+  } catch (error) {
+    next(error);
+  }
+});
+
+ordersRouter.get("/:orderId", requireAuth, requireRole("CUSTOMER"), async (req, res, next) => {
+  try {
+    const { orderId } = orderIdParam.parse(req.params);
+    const order = await getOrderForCustomer(orderId, req.user!.id);
+    res.json({ order });
   } catch (error) {
     next(error);
   }

@@ -10,8 +10,11 @@ type CheckoutScreenProps = NativeStackScreenProps<RootStackParamList, "Checkout"
 type OrderResponse = {
   order: {
     id: string;
+    status: "PENDING" | "PREPARING" | "READY" | "COMPLETED" | "CANCELED";
     totalCents: number;
     pickupEtaMin: number;
+    routeOrigin: string;
+    routeDestination: string;
     items: Array<{ id: string; menuItemId: string; quantity: number; priceCents: number; menuItem?: { name: string } }>;
   };
 };
