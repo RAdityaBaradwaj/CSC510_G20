@@ -1,3 +1,4 @@
+import { OrderStatus } from "@prisma/client";
 import { Router } from "express";
 import { z } from "zod";
 
@@ -13,6 +14,7 @@ import {
   updateMenuItem,
   deleteMenuItem
 } from "../services/restaurantService";
+import { listOrdersForRestaurant, updateOrderStatusForRestaurant } from "../services/orderService";
 
 const restaurantIdParam = z.object({
   restaurantId: z.string().uuid()
@@ -39,6 +41,10 @@ const itemPayload = z.object({
 
 const itemUpdatePayload = itemPayload.partial();
 
+const orderStatusPayload = z.object({
+  status: z.nativeEnum(OrderStatus)
+});
+
 export const restaurantRouter = Router();
 
 restaurantRouter.get("/", async (_req, res, next) => {
@@ -59,6 +65,22 @@ restaurantRouter.get("/:restaurantId/menu", async (req, res, next) => {
     next(error);
   }
 });
+
+restaurantRouter.get(
+  "/:restaurantId/orders",
+  requireAuth,
+  requireRole("RESTAURANT"),
+  ensureRestaurantOwnership,
+  async (req, res, next) => {
+    try {
+      const { restaurantId } = restaurantIdParam.parse(req.params);
+      const orders = await listOrdersForRestaurant(restaurantId);
+      res.json({ orders });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 restaurantRouter.post(
   "/:restaurantId/menu/sections",
@@ -154,6 +176,23 @@ restaurantRouter.delete(
       const params = restaurantIdParam.extend({ itemId: z.string().uuid() }).parse(req.params);
       await deleteMenuItem(params.restaurantId, params.itemId, req.user!.id);
       res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+restaurantRouter.patch(
+  "/:restaurantId/orders/:orderId",
+  requireAuth,
+  requireRole("RESTAURANT"),
+  ensureRestaurantOwnership,
+  async (req, res, next) => {
+    try {
+      const params = restaurantIdParam.extend({ orderId: z.string().uuid() }).parse(req.params);
+      const payload = orderStatusPayload.parse(req.body);
+      const order = await updateOrderStatusForRestaurant(params.restaurantId, params.orderId, payload.status);
+      res.json({ order });
     } catch (error) {
       next(error);
     }

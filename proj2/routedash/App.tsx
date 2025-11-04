@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { LogoutButton } from "./src/components/LogoutButton";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { CheckoutPage } from "./src/screens/CheckoutPage";
 import { LoginScreen } from "./src/screens/LoginScreen";
@@ -25,6 +26,10 @@ const AppTheme = {
   }
 };
 
+const withLogout = {
+  headerRight: () => <LogoutButton />
+};
+
 const CustomerNavigator = () => (
   <Stack.Navigator initialRouteName="Planner">
     <Stack.Screen
@@ -35,25 +40,26 @@ const CustomerNavigator = () => (
     <Stack.Screen
       name="Restaurants"
       component={RestaurantsScreen}
-      options={{ headerTitle: "Restaurants", animation: "slide_from_right" }}
+      options={{ headerTitle: "Restaurants", animation: "slide_from_right", ...withLogout }}
     />
     <Stack.Screen
       name="Menu"
       component={MenuScreen}
       options={({ route }) => ({
         headerTitle: route.params.restaurant.name,
-        animation: "slide_from_right"
+        animation: "slide_from_right",
+        ...withLogout
       })}
     />
     <Stack.Screen
       name="Checkout"
       component={CheckoutPage}
-      options={{ headerTitle: "Checkout", animation: "slide_from_right" }}
+      options={{ headerTitle: "Checkout", animation: "slide_from_right", ...withLogout }}
     />
     <Stack.Screen
       name="OrderStatus"
       component={OrderStatusScreen}
-      options={{ headerTitle: "Order Status", animation: "slide_from_right" }}
+      options={{ headerTitle: "Order Status", animation: "slide_from_right", ...withLogout }}
     />
   </Stack.Navigator>
 );
@@ -68,7 +74,7 @@ const MerchantNavigator = () => (
     <Stack.Screen
       name="Restaurants"
       component={RestaurantsScreen}
-      options={{ headerTitle: "Restaurants", animation: "slide_from_right" }}
+      options={{ headerTitle: "Restaurants", animation: "slide_from_right", ...withLogout }}
     />
     <Stack.Screen
       name="Menu"

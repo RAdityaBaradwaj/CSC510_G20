@@ -60,6 +60,18 @@ After running `npm run db:seed`, you get:
 | Merchant 1 | merchant1@example.com | password123!  |
 | Merchant 2 | merchant2@example.com | password123!  |
 
+## Core auth endpoints
+
+| Method | Path                        | Notes                                                   |
+|--------|-----------------------------|---------------------------------------------------------|
+| POST   | `/api/auth/register-customer`   | `{ name,email,password }` → creates customer + session |
+| POST   | `/api/auth/register-restaurant` | `{ owner + restaurant info }` → returns user + restaurant |
+| POST   | `/api/auth/login`           | `{ email,password }` → sets HttpOnly JWT cookie         |
+| POST   | `/api/auth/logout`          | clears session cookie                                   |
+| GET    | `/api/auth/me`              | returns current user (requires cookie)                  |
+
+The mobile app calls these endpoints via `fetch` with `credentials:"include"`; the logout button in both customer and merchant views simply invokes `POST /api/auth/logout` and clears local storage.
+
 ## Next steps
 
 - Implement auth routes (`/api/auth/*`) using JWT cookies.
