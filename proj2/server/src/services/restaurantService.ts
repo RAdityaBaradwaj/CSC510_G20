@@ -1,0 +1,233 @@
+import { MenuItemAction, Prisma } from "@prisma/client";
+
+import { HttpError } from "../errors/HttpError";
+import { prisma } from "../lib/prisma";
+import { log } from "../logger";
+
+type SectionInput = {
+  title: string;
+  position?: number;
+};
+
+type ItemInput = {
+  sectionId?: string | null;
+  name?: string;
+  description?: string;
+  priceCents?: number;
+  isAvailable?: boolean;
+  tags?: string[];
+};
+
+export const getActiveRestaurants = () =>
+  prisma.restaurant.findMany({
+    where: { isActive: true },
+    select: {
+      id: true,
+      name: true,
+      address: true,
+      latitude: true,
+      longitude: true
+    },
+    orderBy: { name: "asc" }
+  });
+
+export const getRestaurantMenu = async (restaurantId: string) => {
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: restaurantId, isActive: true },
+    include: {
+      sections: {
+        orderBy: { position: "asc" },
+        include: {
+          items: {
+            orderBy: { name: "asc" }
+          }
+        }
+      },
+      menuItems: {
+        where: { sectionId: null },
+        orderBy: { name: "asc" }
+      }
+    }
+  });
+
+  if (!restaurant) {
+    throw new HttpError(404, "Restaurant not found");
+  }
+
+  const sections = restaurant.sections.map((section) => ({
+    id: section.id,
+    title: section.title,
+    position: section.position,
+    items: section.items
+  }));
+
+  if (restaurant.menuItems.length) {
+    sections.push({
+      id: "ungrouped",
+      title: "Featured",
+      position: sections.length,
+      items: restaurant.menuItems
+    });
+  }
+
+  return {
+    restaurant: {
+      id: restaurant.id,
+      name: restaurant.name,
+      address: restaurant.address,
+      latitude: restaurant.latitude,
+      longitude: restaurant.longitude
+    },
+    sections
+  };
+};
+
+export const createMenuSection = (restaurantId: string, input: SectionInput) =>
+  prisma.menuSection.create({
+    data: {
+      restaurantId,
+      title: input.title,
+      position: input.position ?? 0
+    }
+  });
+
+export const updateMenuSection = async (restaurantId: string, sectionId: string, input: SectionInput) => {
+  const section = await prisma.menuSection.findUnique({
+    where: { id: sectionId, restaurantId }
+  });
+  if (!section) {
+    throw new HttpError(404, "Section not found");
+  }
+
+  return prisma.menuSection.update({
+    where: { id: sectionId },
+    data: {
+      title: input.title ?? section.title,
+      position: input.position ?? section.position
+    }
+  });
+};
+
+export const deleteMenuSection = async (restaurantId: string, sectionId: string) => {
+  const section = await prisma.menuSection.findUnique({
+    where: { id: sectionId, restaurantId }
+  });
+  if (!section) {
+    throw new HttpError(404, "Section not found");
+  }
+
+  await prisma.menuSection.delete({ where: { id: sectionId } });
+};
+
+const logMenuChange = async ({
+  restaurantId,
+  menuItemId,
+  userId,
+  action,
+  before,
+  after
+}: {
+  restaurantId: string;
+  menuItemId: string;
+  userId: string;
+  action: MenuItemAction;
+  before?: Prisma.MenuItemGetPayload<{}> | null;
+  after?: Prisma.MenuItemGetPayload<{}> | null;
+}) => {
+  await prisma.menuItemChangeLog.create({
+    data: {
+      restaurantId,
+      menuItemId,
+      userId,
+      action,
+      beforeJSON: before ? JSON.stringify(before) : undefined,
+      afterJSON: after ? JSON.stringify(after) : undefined
+    }
+  });
+
+  log.info("menu_item_change", { action, restaurantId, menuItemId });
+};
+
+export const createMenuItem = async (
+  restaurantId: string,
+  userId: string,
+  input: ItemInput
+) => {
+  const item = await prisma.menuItem.create({
+    data: {
+      restaurantId,
+      sectionId: input.sectionId ?? null,
+      name: input.name ?? "Untitled Item",
+      description: input.description ?? "",
+      priceCents: input.priceCents ?? 0,
+      isAvailable: input.isAvailable ?? true,
+      tags: input.tags ?? []
+    }
+  });
+
+  await logMenuChange({
+    restaurantId,
+    menuItemId: item.id,
+    userId,
+    action: MenuItemAction.CREATE,
+    after: item
+  });
+
+  return item;
+};
+
+export const updateMenuItem = async (
+  restaurantId: string,
+  itemId: string,
+  userId: string,
+  input: ItemInput
+) => {
+  const existing = await prisma.menuItem.findFirst({
+    where: { id: itemId, restaurantId }
+  });
+  if (!existing) {
+    throw new HttpError(404, "Menu item not found");
+  }
+
+  const updated = await prisma.menuItem.update({
+    where: { id: itemId },
+    data: {
+      sectionId: input.sectionId === undefined ? existing.sectionId : input.sectionId,
+      name: input.name ?? existing.name,
+      description: input.description ?? existing.description,
+      priceCents: input.priceCents ?? existing.priceCents,
+      isAvailable: input.isAvailable ?? existing.isAvailable,
+      tags: input.tags ?? existing.tags
+    }
+  });
+
+  await logMenuChange({
+    restaurantId,
+    menuItemId: itemId,
+    userId,
+    action: MenuItemAction.UPDATE,
+    before: existing,
+    after: updated
+  });
+
+  return updated;
+};
+
+export const deleteMenuItem = async (restaurantId: string, itemId: string, userId: string) => {
+  const existing = await prisma.menuItem.findFirst({
+    where: { id: itemId, restaurantId }
+  });
+  if (!existing) {
+    throw new HttpError(404, "Menu item not found");
+  }
+
+  await prisma.menuItem.delete({ where: { id: itemId } });
+
+  await logMenuChange({
+    restaurantId,
+    menuItemId: itemId,
+    userId,
+    action: MenuItemAction.DELETE,
+    before: existing
+  });
+};
