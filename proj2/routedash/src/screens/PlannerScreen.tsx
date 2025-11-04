@@ -15,6 +15,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import MapView, { LatLng, Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { LogoutButton } from "../components/LogoutButton";
 import { useAuth } from "../context/AuthContext";
 import { useDirections } from "../hooks/useDirections";
 import { PlaceSuggestion, usePlacesAutocomplete } from "../hooks/usePlacesAutocomplete";
@@ -300,12 +301,14 @@ export const PlannerScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.brandBadge}>RouteDash</Text>
-          <Text style={styles.headerTitle}>Trip Planner</Text>
-          <Text style={styles.headerSubtitle}>{statusLabel}</Text>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.brandBadge}>RouteDash</Text>
+            <Text style={styles.headerTitle}>Trip Planner</Text>
+            <Text style={styles.headerSubtitle}>{statusLabel}</Text>
+          </View>
+          <LogoutButton />
         </View>
-
         <View style={styles.userBadge}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase() ?? "R"}</Text>
@@ -314,9 +317,14 @@ export const PlannerScreen = () => {
             <Text style={styles.userName}>{user?.name ?? "Operator"}</Text>
             <Text style={styles.userEmail}>{user?.email ?? "demo@routedash.com"}</Text>
           </View>
-          <Pressable style={styles.logoutButton} onPress={logout}>
-            <Text style={styles.logoutText}>Log out</Text>
-          </Pressable>
+          {user?.role === "RESTAURANT" ? (
+            <Pressable
+              style={styles.merchantLink}
+              onPress={() => navigation.navigate("MerchantDashboard")}
+            >
+              <Text style={styles.merchantText}>Merchant</Text>
+            </Pressable>
+          ) : null}
         </View>
       </View>
 
@@ -595,14 +603,17 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 24,
-    paddingBottom: 16,
+    paddingBottom: 12,
     paddingTop: Platform.select({ ios: 12, android: 16 }),
     backgroundColor: "#FFFFFF",
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#E2E8F0",
+    borderBottomColor: "#E2E8F0"
+  },
+  headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center"
+    alignItems: "center",
+    marginBottom: 12
   },
   brandBadge: {
     fontSize: 14,
@@ -652,17 +663,15 @@ const styles = StyleSheet.create({
   userDetails: {
     marginLeft: 12
   },
-  logoutButton: {
-    marginLeft: 16,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    backgroundColor: "#E2E8F0"
+  merchantLink: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    backgroundColor: "#E0F2FE"
   },
-  logoutText: {
-    color: "#0F172A",
-    fontWeight: "600",
-    fontSize: 13
+  merchantText: {
+    color: "#0369A1",
+    fontWeight: "600"
   },
   scrollContent: {
     paddingTop: 24,
