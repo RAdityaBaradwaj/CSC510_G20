@@ -12,9 +12,18 @@ const STATUS_STEPS = [
   "Packing and ready for pickup!"
 ];
 
+const formatCurrency = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+
 export const OrderStatusScreen = ({ route }: OrderStatusScreenProps) => {
   const { order } = route.params;
   const [step, setStep] = useState(0);
+  const subtotalCents =
+    order.subtotalCents ??
+    order.items.reduce((sum, item) => sum + item.priceCents * item.quantity, 0);
+  const inferredTax =
+    order.taxCents ??
+    Math.max(order.totalCents - subtotalCents, 0);
+  const totalCents = order.totalCents ?? subtotalCents + inferredTax;
 
   useEffect(() => {
     const timers = STATUS_STEPS.slice(1).map((_, index) =>
@@ -41,10 +50,22 @@ export const OrderStatusScreen = ({ route }: OrderStatusScreenProps) => {
             <Text style={styles.itemName}>
               {item.quantity} × {item.name ?? "Menu item"}
             </Text>
-            <Text style={styles.itemPrice}>${((item.priceCents * item.quantity) / 100).toFixed(2)}</Text>
+            <Text style={styles.itemPrice}>{formatCurrency(item.priceCents * item.quantity)}</Text>
           </View>
         ))}
-        <Text style={styles.total}>Total ${(order.totalCents / 100).toFixed(2)}</Text>
+        <View style={styles.divider} />
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Subtotal</Text>
+          <Text style={styles.summaryValue}>{formatCurrency(subtotalCents)}</Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Tax</Text>
+          <Text style={styles.summaryValue}>{formatCurrency(inferredTax)}</Text>
+        </View>
+        <View style={[styles.summaryRow, styles.summaryTotalRow]}>
+          <Text style={styles.summaryTotal}>Total</Text>
+          <Text style={styles.summaryTotal}>{formatCurrency(totalCents)}</Text>
+        </View>
       </View>
     </View>
   );
@@ -85,5 +106,18 @@ const styles = StyleSheet.create({
   },
   itemName: { color: "#0F172A" },
   itemPrice: { fontWeight: "600", color: "#2563EB" },
-  total: { marginTop: 8, fontWeight: "700", textAlign: "right" }
+  divider: {
+    height: 1,
+    backgroundColor: "#E2E8F0",
+    marginVertical: 10
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 6
+  },
+  summaryLabel: { color: "#475569" },
+  summaryValue: { color: "#0F172A", fontWeight: "600" },
+  summaryTotalRow: { marginTop: 6 },
+  summaryTotal: { fontWeight: "700", color: "#0F172A" }
 });

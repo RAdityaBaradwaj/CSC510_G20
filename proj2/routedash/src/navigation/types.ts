@@ -40,6 +40,8 @@ export type OrderSummary = {
   pickupEtaMin: number;
   items: Array<{ id: string; menuItemId: string; quantity: number; priceCents: number; name?: string }>;
   restaurant: RestaurantSummary;
+  subtotalCents?: number;
+  taxCents?: number;
 };
 
 export type RootStackParamList = {
