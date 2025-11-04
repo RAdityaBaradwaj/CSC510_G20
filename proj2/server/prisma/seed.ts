@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole } from "@prisma/client";
+import { OrderStatus, PrismaClient, UserRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -7,6 +7,8 @@ const hash = (plain: string) => bcrypt.hash(plain, 10);
 
 async function main() {
   await prisma.menuItemChangeLog.deleteMany();
+  await prisma.orderItem.deleteMany();
+  await prisma.order.deleteMany();
   await prisma.menuItem.deleteMany();
   await prisma.menuSection.deleteMany();
   await prisma.restaurant.deleteMany();
@@ -124,9 +126,11 @@ async function main() {
         }
       ]
     });
+
+    return restaurant;
   };
 
-  await Promise.all([
+  const [restaurantOne, restaurantTwo] = await Promise.all([
     createRestaurant(
       merchantOne.id,
       "RouteDash Fuel Kitchen",
@@ -142,6 +146,82 @@ async function main() {
       -78.647
     )
   ]);
+
+  const restaurantOneItems = await prisma.menuItem.findMany({
+    where: { restaurantId: restaurantOne.id },
+    orderBy: { name: "asc" }
+  });
+
+  const restaurantTwoItems = await prisma.menuItem.findMany({
+    where: { restaurantId: restaurantTwo.id },
+    orderBy: { name: "asc" }
+  });
+
+  const pendingOrderItems = restaurantOneItems.slice(0, 2).map((item, index) => ({
+    menuItemId: item.id,
+    quantity: index === 0 ? 1 : 2,
+    priceCents: item.priceCents
+  }));
+  const pendingOrderTotal = pendingOrderItems.reduce((sum, item) => sum + item.priceCents * item.quantity, 0);
+
+  await prisma.order.create({
+    data: {
+      customerId: customer.id,
+      restaurantId: restaurantOne.id,
+      status: OrderStatus.PENDING,
+      pickupEtaMin: 15,
+      routeOrigin: "Raleigh, NC",
+      routeDestination: "Durham, NC",
+      totalCents: pendingOrderTotal,
+      items: {
+        create: pendingOrderItems
+      }
+    }
+  });
+
+  const processingOrderItems = restaurantOneItems.slice(2, 4).map((item) => ({
+    menuItemId: item.id,
+    quantity: 1,
+    priceCents: item.priceCents
+  }));
+  const processingOrderTotal = processingOrderItems.reduce((sum, item) => sum + item.priceCents * item.quantity, 0);
+
+  await prisma.order.create({
+    data: {
+      customerId: customer.id,
+      restaurantId: restaurantOne.id,
+      status: OrderStatus.PREPARING,
+      pickupEtaMin: 10,
+      routeOrigin: "Cary, NC",
+      routeDestination: "Durham, NC",
+      totalCents: processingOrderTotal,
+      items: {
+        create: processingOrderItems
+      }
+    }
+  });
+
+  const readyOrderItems = restaurantTwoItems.slice(0, 2).map((item) => ({
+    menuItemId: item.id,
+    quantity: 1,
+    priceCents: item.priceCents
+  }));
+  const readyOrderTotal = readyOrderItems.reduce((sum, item) => sum + item.priceCents * item.quantity, 0);
+
+  await prisma.order.create({
+    data: {
+      customerId: customer.id,
+      restaurantId: restaurantTwo.id,
+      status: OrderStatus.READY,
+      pickupEtaMin: 5,
+      routeOrigin: "Chapel Hill, NC",
+      routeDestination: "Raleigh, NC",
+      totalCents: readyOrderTotal,
+      items: {
+        create: readyOrderItems
+      }
+    }
+  });
 
   console.log("Seed complete:", {
     customer: customer.email,

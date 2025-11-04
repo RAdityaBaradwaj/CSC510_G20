@@ -1,3 +1,5 @@
+import { OrderStatus } from "@prisma/client";
+
 import { HttpError } from "../errors/HttpError";
 import { prisma } from "../lib/prisma";
 
@@ -86,3 +88,63 @@ export const listOrdersForUser = (customerId: string) =>
     },
     orderBy: { createdAt: "desc" }
   });
+
+const restaurantOrderInclude = {
+  customer: {
+    select: { id: true, name: true }
+  },
+  items: {
+    include: {
+      menuItem: {
+        select: { name: true }
+      }
+    }
+  }
+} as const;
+
+export const listOrdersForRestaurant = (restaurantId: string) =>
+  prisma.order.findMany({
+    where: { restaurantId },
+    include: restaurantOrderInclude,
+    orderBy: [{ status: "asc" }, { createdAt: "asc" }]
+  });
+
+const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  [OrderStatus.PENDING]: [OrderStatus.PREPARING, OrderStatus.CANCELED],
+  [OrderStatus.PREPARING]: [OrderStatus.READY, OrderStatus.CANCELED],
+  [OrderStatus.READY]: [OrderStatus.COMPLETED, OrderStatus.CANCELED],
+  [OrderStatus.COMPLETED]: [],
+  [OrderStatus.CANCELED]: []
+};
+
+export const updateOrderStatusForRestaurant = async (
+  restaurantId: string,
+  orderId: string,
+  nextStatus: OrderStatus
+) => {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: restaurantOrderInclude
+  });
+
+  if (!order || order.restaurantId !== restaurantId) {
+    throw new HttpError(404, "Order not found");
+  }
+
+  if (order.status === nextStatus) {
+    return order;
+  }
+
+  const allowedTransitions = STATUS_TRANSITIONS[order.status] ?? [];
+  if (!allowedTransitions.includes(nextStatus)) {
+    throw new HttpError(400, "Invalid status transition");
+  }
+
+  const updated = await prisma.order.update({
+    where: { id: orderId },
+    data: { status: nextStatus },
+    include: restaurantOrderInclude
+  });
+
+  return updated;
+};
