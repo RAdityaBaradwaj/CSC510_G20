@@ -124,7 +124,6 @@ export const OrderStatusScreen = ({ route }: OrderStatusScreenProps) => {
   const statusMessage = STATUS_MESSAGES[order.status];
   const statusLabel = STATUS_LABELS[order.status];
   const step = STATUS_PROGRESS[order.status];
-
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Order #{order.id.slice(0, 6).toUpperCase()}</Text>

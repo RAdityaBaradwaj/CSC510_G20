@@ -22,7 +22,6 @@ const orderPayload = z.object({
 const orderIdParam = z.object({
   orderId: z.string().uuid()
 });
-
 export const ordersRouter = Router();
 
 ordersRouter.post("/", requireAuth, requireRole("CUSTOMER"), async (req, res, next) => {
