@@ -3,9 +3,7 @@ import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, T
 
 import { apiDelete, apiFetch, apiPatch, apiPost } from "../api/client";
 import { useAuth } from "../context/AuthContext";
-import type { MenuSection } from "../navigation/types";
-
-type OrderStatusValue = "PENDING" | "PREPARING" | "READY" | "COMPLETED" | "CANCELED";
+import type { MenuSection, OrderStatusValue } from "../navigation/types";
 
 type RestaurantOrderItem = {
   id: string;

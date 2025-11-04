@@ -71,21 +71,23 @@ export const createOrder = async (customerId: string, input: CreateOrderInput) =
   return order;
 };
 
+const customerOrderInclude = {
+  restaurant: {
+    select: { id: true, name: true, address: true, latitude: true, longitude: true }
+  },
+  items: {
+    include: {
+      menuItem: {
+        select: { name: true }
+      }
+    }
+  }
+} as const;
+
 export const listOrdersForUser = (customerId: string) =>
   prisma.order.findMany({
     where: { customerId },
-    include: {
-      restaurant: {
-        select: { id: true, name: true }
-      },
-      items: {
-        include: {
-          menuItem: {
-            select: { name: true }
-          }
-        }
-      }
-    },
+    include: customerOrderInclude,
     orderBy: { createdAt: "desc" }
   });
 
@@ -147,4 +149,17 @@ export const updateOrderStatusForRestaurant = async (
   });
 
   return updated;
+};
+
+export const getOrderForCustomer = async (orderId: string, customerId: string) => {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: customerOrderInclude
+  });
+
+  if (!order || order.customerId !== customerId) {
+    throw new HttpError(404, "Order not found");
+  }
+
+  return order;
 };
