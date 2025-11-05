@@ -7,7 +7,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { LogoutButton } from "./src/components/LogoutButton";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
-import { CheckoutScreen } from "./src/screens/CheckoutScreen";
+import { CheckoutPage } from "./src/screens/CheckoutPage";
 import { LoginScreen } from "./src/screens/LoginScreen";
 import { MenuScreen } from "./src/screens/MenuScreen";
 import { MerchantDashboardScreen } from "./src/screens/MerchantDashboardScreen";
@@ -53,7 +53,7 @@ const CustomerNavigator = () => (
     />
     <Stack.Screen
       name="Checkout"
-      component={CheckoutScreen}
+      component={CheckoutPage}
       options={{ headerTitle: "Checkout", animation: "slide_from_right", ...withLogout }}
     />
     <Stack.Screen
