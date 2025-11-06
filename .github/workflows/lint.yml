@@ -1,0 +1,42 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "proj2/server/**"
+      - "proj2/routedash/**"
+      - ".github/workflows/lint.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "proj2/server/**"
+      - "proj2/routedash/**"
+      - ".github/workflows/lint.yml"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install backend deps
+        run: npm install
+        working-directory: proj2/server
+
+      - name: Lint backend
+        run: npm run lint
+        working-directory: proj2/server
+
+      - name: Install frontend deps
+        run: npm install
+        working-directory: proj2/routedash
+
+      - name: Lint frontend
+        run: npm run lint
+        working-directory: proj2/routedash

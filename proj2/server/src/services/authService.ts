@@ -49,7 +49,7 @@ export const createCustomer = async ({ name, email, password }: CreateCustomerIn
 
     return user;
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    if (isUniqueConstraintError(error)) {
       throw new HttpError(409, "Email already registered");
     }
     throw error;
@@ -93,7 +93,7 @@ export const createRestaurantOwner = async ({
 
     return result;
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    if (isUniqueConstraintError(error)) {
       throw new HttpError(409, "Email already registered");
     }
     throw error;
@@ -123,3 +123,8 @@ export const authenticateUser = async (email: string, password: string) => {
 
   return user;
 };
+
+const isUniqueConstraintError = (error: unknown) =>
+  error instanceof Prisma.PrismaClientKnownRequestError
+    ? error.code === "P2002"
+    : typeof error === "object" && error !== null && "code" in error && (error as { code: string }).code === "P2002";

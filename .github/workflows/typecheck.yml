@@ -1,0 +1,42 @@
+name: Type Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "proj2/server/**"
+      - "proj2/routedash/**"
+      - ".github/workflows/typecheck.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "proj2/server/**"
+      - "proj2/routedash/**"
+      - ".github/workflows/typecheck.yml"
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install backend deps
+        run: npm install
+        working-directory: proj2/server
+
+      - name: Backend type check
+        run: npm run typecheck
+        working-directory: proj2/server
+
+      - name: Install frontend deps
+        run: npm install
+        working-directory: proj2/routedash
+
+      - name: Frontend type check
+        run: npm run typecheck
+        working-directory: proj2/routedash

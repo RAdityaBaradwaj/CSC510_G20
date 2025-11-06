@@ -10,6 +10,7 @@ proj2/routedash/.expo-shared/
 # Build outputs
 proj2/routedash/dist/
 proj2/routedash/build/
+proj2/server/coverage/
 
 # Environment configuration
 proj2/routedash/.env
