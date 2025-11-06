@@ -1,21 +1,9 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { apiFetch } from "../api/client";
-import type {
-  CartItem,
-  MenuItem,
-  MenuSection,
-  RootStackParamList,
-} from "../navigation/types";
+import type { CartItem, MenuItem, MenuSection, RootStackParamList } from "../navigation/types";
 
 type MenuResponse = {
   sections: Array<{
@@ -45,12 +33,9 @@ export const MenuScreen = ({ route, navigation }: MenuScreenProps) => {
     const loadMenu = async () => {
       try {
         setIsLoading(true);
-        const response = await apiFetch<MenuResponse>(
-          `/api/restaurants/${restaurant.id}/menu`,
-          {
-            requireAuth: false,
-          },
-        );
+        const response = await apiFetch<MenuResponse>(`/api/restaurants/${restaurant.id}/menu`, {
+          requireAuth: false,
+        });
         const normalized: MenuSection[] = response.sections.map((section) => ({
           id: section.id,
           title: section.title,
@@ -76,19 +61,14 @@ export const MenuScreen = ({ route, navigation }: MenuScreenProps) => {
     loadMenu().catch(() => {});
   }, [restaurant.id]);
 
-  const itemCount = useMemo(
-    () => cart.reduce((sum, entry) => sum + entry.quantity, 0),
-    [cart],
-  );
+  const itemCount = useMemo(() => cart.reduce((sum, entry) => sum + entry.quantity, 0), [cart]);
 
   const addToCart = (item: MenuItem) => {
     setCart((prev) => {
       const existing = prev.find((entry) => entry.menuItemId === item.id);
       if (existing) {
         return prev.map((entry) =>
-          entry.menuItemId === item.id
-            ? { ...entry, quantity: entry.quantity + 1 }
-            : entry,
+          entry.menuItemId === item.id ? { ...entry, quantity: entry.quantity + 1 } : entry,
         );
       }
       return [
@@ -123,16 +103,9 @@ export const MenuScreen = ({ route, navigation }: MenuScreenProps) => {
               {section.items.map((item) => (
                 <View key={item.id} style={styles.card}>
                   <Text style={styles.name}>{item.name}</Text>
-                  {item.description ? (
-                    <Text style={styles.desc}>{item.description}</Text>
-                  ) : null}
-                  <Text style={styles.price}>
-                    ${(item.priceCents / 100).toFixed(2)}
-                  </Text>
-                  <Pressable
-                    style={styles.addBtn}
-                    onPress={() => addToCart(item)}
-                  >
+                  {item.description ? <Text style={styles.desc}>{item.description}</Text> : null}
+                  <Text style={styles.price}>${(item.priceCents / 100).toFixed(2)}</Text>
+                  <Pressable style={styles.addBtn} onPress={() => addToCart(item)}>
                     <Text style={styles.addText}>Add to Cart</Text>
                   </Pressable>
                 </View>

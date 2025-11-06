@@ -1,7 +1,7 @@
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus } from "@prisma/client";
 
-import { HttpError } from '../errors/HttpError';
-import { prisma } from '../lib/prisma';
+import { HttpError } from "../errors/HttpError";
+import { prisma } from "../lib/prisma";
 
 type OrderItemInput = {
   menuItemId: string;
@@ -21,7 +21,7 @@ export const createOrder = async (customerId: string, input: CreateOrderInput) =
     where: { id: input.restaurantId, isActive: true },
   });
   if (!restaurant) {
-    throw new HttpError(404, 'Restaurant not found');
+    throw new HttpError(404, "Restaurant not found");
   }
 
   const menuItems = await prisma.menuItem.findMany({
@@ -33,7 +33,7 @@ export const createOrder = async (customerId: string, input: CreateOrderInput) =
   });
 
   if (menuItems.length !== input.items.length) {
-    throw new HttpError(400, 'Some menu items are unavailable');
+    throw new HttpError(400, "Some menu items are unavailable");
   }
 
   const totalCents = input.items.reduce((total, item) => {
@@ -88,7 +88,7 @@ export const listOrdersForUser = (customerId: string) =>
   prisma.order.findMany({
     where: { customerId },
     include: customerOrderInclude,
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   });
 
 const restaurantOrderInclude = {
@@ -108,7 +108,7 @@ export const listOrdersForRestaurant = (restaurantId: string) =>
   prisma.order.findMany({
     where: { restaurantId },
     include: restaurantOrderInclude,
-    orderBy: [{ status: 'asc' }, { createdAt: 'asc' }],
+    orderBy: [{ status: "asc" }, { createdAt: "asc" }],
   });
 
 const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
@@ -130,7 +130,7 @@ export const updateOrderStatusForRestaurant = async (
   });
 
   if (!order || order.restaurantId !== restaurantId) {
-    throw new HttpError(404, 'Order not found');
+    throw new HttpError(404, "Order not found");
   }
 
   if (order.status === nextStatus) {
@@ -139,7 +139,7 @@ export const updateOrderStatusForRestaurant = async (
 
   const allowedTransitions = STATUS_TRANSITIONS[order.status] ?? [];
   if (!allowedTransitions.includes(nextStatus)) {
-    throw new HttpError(400, 'Invalid status transition');
+    throw new HttpError(400, "Invalid status transition");
   }
 
   const updated = await prisma.order.update({
@@ -158,7 +158,7 @@ export const getOrderForCustomer = async (orderId: string, customerId: string) =
   });
 
   if (!order || order.customerId !== customerId) {
-    throw new HttpError(404, 'Order not found');
+    throw new HttpError(404, "Order not found");
   }
 
   return order;

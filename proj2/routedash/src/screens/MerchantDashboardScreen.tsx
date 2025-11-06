@@ -78,9 +78,7 @@ export const MerchantDashboardScreen = () => {
   const [sectionTitle, setSectionTitle] = useState("");
   const [itemName, setItemName] = useState("");
   const [itemPrice, setItemPrice] = useState("10.00");
-  const [itemSectionId, setItemSectionId] = useState<string | undefined>(
-    undefined,
-  );
+  const [itemSectionId, setItemSectionId] = useState<string | undefined>(undefined);
 
   const restaurantId = user?.restaurantId;
 
@@ -193,10 +191,7 @@ export const MerchantDashboardScreen = () => {
     }
   };
 
-  const handleOrderStatusChange = async (
-    orderId: string,
-    nextStatus: OrderStatusValue,
-  ) => {
+  const handleOrderStatusChange = async (orderId: string, nextStatus: OrderStatusValue) => {
     if (!restaurantId) {
       return;
     }
@@ -239,33 +234,19 @@ export const MerchantDashboardScreen = () => {
       <View style={styles.tabRow}>
         <Pressable
           onPress={() => switchTab("orders")}
-          style={[
-            styles.tabButton,
-            activeTab === "orders" && styles.tabButtonActive,
-          ]}
+          style={[styles.tabButton, activeTab === "orders" && styles.tabButtonActive]}
         >
           <Text
-            style={[
-              styles.tabButtonText,
-              activeTab === "orders" && styles.tabButtonTextActive,
-            ]}
+            style={[styles.tabButtonText, activeTab === "orders" && styles.tabButtonTextActive]}
           >
             Orders
           </Text>
         </Pressable>
         <Pressable
           onPress={() => switchTab("menu")}
-          style={[
-            styles.tabButton,
-            activeTab === "menu" && styles.tabButtonActive,
-          ]}
+          style={[styles.tabButton, activeTab === "menu" && styles.tabButtonActive]}
         >
-          <Text
-            style={[
-              styles.tabButtonText,
-              activeTab === "menu" && styles.tabButtonTextActive,
-            ]}
-          >
+          <Text style={[styles.tabButtonText, activeTab === "menu" && styles.tabButtonTextActive]}>
             Menu
           </Text>
         </Pressable>
@@ -284,18 +265,9 @@ export const MerchantDashboardScreen = () => {
             return (
               <View key={order.id} style={styles.card}>
                 <View style={styles.orderHeader}>
-                  <Text style={styles.orderTitle}>
-                    Order #{order.id.slice(0, 6).toUpperCase()}
-                  </Text>
-                  <View
-                    style={[
-                      styles.statusChip,
-                      styles[`statusChip${order.status}` as const],
-                    ]}
-                  >
-                    <Text style={styles.statusChipText}>
-                      {STATUS_LABELS[order.status]}
-                    </Text>
+                  <Text style={styles.orderTitle}>Order #{order.id.slice(0, 6).toUpperCase()}</Text>
+                  <View style={[styles.statusChip, styles[`statusChip${order.status}` as const]]}>
+                    <Text style={styles.statusChipText}>{STATUS_LABELS[order.status]}</Text>
                   </View>
                 </View>
                 <Text style={styles.meta}>Customer: {order.customer.name}</Text>
@@ -304,8 +276,7 @@ export const MerchantDashboardScreen = () => {
                   Route: {order.routeOrigin} → {order.routeDestination}
                 </Text>
                 <Text style={styles.meta}>
-                  ETA {order.pickupEtaMin} min • $
-                  {(order.totalCents / 100).toFixed(2)}
+                  ETA {order.pickupEtaMin} min • ${(order.totalCents / 100).toFixed(2)}
                 </Text>
                 <View style={styles.divider} />
                 <View style={styles.orderItems}>
@@ -326,9 +297,7 @@ export const MerchantDashboardScreen = () => {
                             ? styles.orderActionBtnDanger
                             : styles.orderActionBtnPrimary,
                         ]}
-                        onPress={() =>
-                          handleOrderStatusChange(order.id, action.target)
-                        }
+                        onPress={() => handleOrderStatusChange(order.id, action.target)}
                       >
                         <Text
                           style={[
@@ -388,31 +357,17 @@ export const MerchantDashboardScreen = () => {
               keyExtractor={(section) => section.id}
               renderItem={({ item }) => (
                 <Pressable
-                  style={[
-                    styles.pill,
-                    itemSectionId === item.id && styles.pillActive,
-                  ]}
+                  style={[styles.pill, itemSectionId === item.id && styles.pillActive]}
                   onPress={() => setItemSectionId(item.id)}
                 >
-                  <Text
-                    style={
-                      itemSectionId === item.id
-                        ? styles.pillTextActive
-                        : styles.pillText
-                    }
-                  >
+                  <Text style={itemSectionId === item.id ? styles.pillTextActive : styles.pillText}>
                     {item.title}
                   </Text>
                 </Pressable>
               )}
-              ListEmptyComponent={
-                <Text style={styles.meta}>No sections yet</Text>
-              }
+              ListEmptyComponent={<Text style={styles.meta}>No sections yet</Text>}
             />
-            <Pressable
-              style={[styles.primaryBtn, styles.addItemBtn]}
-              onPress={handleAddItem}
-            >
+            <Pressable style={[styles.primaryBtn, styles.addItemBtn]} onPress={handleAddItem}>
               <Text style={styles.primaryBtnText}>Add Item</Text>
             </Pressable>
           </View>
@@ -426,25 +381,18 @@ export const MerchantDashboardScreen = () => {
                   <View key={item.id} style={styles.itemRow}>
                     <View>
                       <Text style={styles.itemName}>{item.name}</Text>
-                      <Text style={styles.meta}>
-                        ${(item.priceCents / 100).toFixed(2)}
-                      </Text>
+                      <Text style={styles.meta}>${(item.priceCents / 100).toFixed(2)}</Text>
                     </View>
                     <View style={styles.itemActions}>
                       <Pressable
                         style={styles.secondaryBtn}
-                        onPress={() =>
-                          toggleAvailability(item.id, item.isAvailable)
-                        }
+                        onPress={() => toggleAvailability(item.id, item.isAvailable)}
                       >
                         <Text style={styles.secondaryText}>
                           {item.isAvailable ? "Disable" : "Enable"}
                         </Text>
                       </Pressable>
-                      <Pressable
-                        style={styles.deleteBtn}
-                        onPress={() => removeItem(item.id)}
-                      >
+                      <Pressable style={styles.deleteBtn} onPress={() => removeItem(item.id)}>
                         <Text style={styles.deleteText}>Delete</Text>
                       </Pressable>
                     </View>

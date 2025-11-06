@@ -12,15 +12,9 @@ import {
 import { apiFetch } from "../api/client";
 import { RestaurantSummary, RootStackParamList } from "../navigation/types";
 
-type RestaurantsScreenProps = NativeStackScreenProps<
-  RootStackParamList,
-  "Restaurants"
->;
+type RestaurantsScreenProps = NativeStackScreenProps<RootStackParamList, "Restaurants">;
 
-export const RestaurantsScreen = ({
-  navigation,
-  route,
-}: RestaurantsScreenProps) => {
+export const RestaurantsScreen = ({ navigation, route }: RestaurantsScreenProps) => {
   const { trip } = route.params;
   const [restaurants, setRestaurants] = useState<RestaurantSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,12 +24,9 @@ export const RestaurantsScreen = ({
     const load = async () => {
       try {
         setIsLoading(true);
-        const response = await apiFetch<{ restaurants: RestaurantSummary[] }>(
-          "/api/restaurants",
-          {
-            requireAuth: false,
-          },
-        );
+        const response = await apiFetch<{ restaurants: RestaurantSummary[] }>("/api/restaurants", {
+          requireAuth: false,
+        });
         setRestaurants(response.restaurants);
       } catch (err) {
         setError((err as Error).message);

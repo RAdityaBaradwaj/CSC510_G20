@@ -12,28 +12,16 @@ import {
 import Slider from "@react-native-community/slider";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import MapView, {
-  LatLng,
-  Marker,
-  Polyline,
-  PROVIDER_GOOGLE,
-} from "react-native-maps";
+import MapView, { LatLng, Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { LogoutButton } from "../components/LogoutButton";
 import { useAuth } from "../context/AuthContext";
 import { useDirections } from "../hooks/useDirections";
-import {
-  PlaceSuggestion,
-  usePlacesAutocomplete,
-} from "../hooks/usePlacesAutocomplete";
+import { PlaceSuggestion, usePlacesAutocomplete } from "../hooks/usePlacesAutocomplete";
 import { useRestaurantRecommendations } from "../hooks/useRestaurantRecommendations";
 import type { Restaurant as RecommendedRestaurant } from "../hooks/useRestaurantRecommendations";
-import {
-  RootStackParamList,
-  RestaurantSummary,
-  TripContext,
-} from "../navigation/types";
+import { RootStackParamList, RestaurantSummary, TripContext } from "../navigation/types";
 
 const DEFAULT_REGION = {
   latitude: 37.7749,
@@ -81,8 +69,7 @@ const computeRegionFromCoordinates = (points: LatLng[]) => {
 
 export const PlannerScreen = () => {
   const { user } = useAuth();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {
     error: directionsError,
     fetchRoute,
@@ -109,32 +96,19 @@ export const PlannerScreen = () => {
   const window = useWindowDimensions();
   const mapRef = useRef<MapView | null>(null);
   const originDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const destinationDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
+  const destinationDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const coordinates = useMemo(
-    () => result?.coordinates ?? [],
-    [result?.coordinates],
-  );
+  const coordinates = useMemo(() => result?.coordinates ?? [], [result?.coordinates]);
   const startPoint: LatLng | undefined = coordinates[0];
   const endPoint: LatLng | undefined = coordinates[coordinates.length - 1];
   const totalMinutes = useMemo(
     () =>
-      result?.leg.durationSeconds
-        ? Math.max(Math.round(result.leg.durationSeconds / 60), 1)
-        : null,
+      result?.leg.durationSeconds ? Math.max(Math.round(result.leg.durationSeconds / 60), 1) : null,
     [result?.leg.durationSeconds],
   );
 
-  const region = useMemo(
-    () => computeRegionFromCoordinates(coordinates),
-    [coordinates],
-  );
-  const mapHeight = useMemo(
-    () => Math.max(260, window.height * 0.33),
-    [window.height],
-  );
+  const region = useMemo(() => computeRegionFromCoordinates(coordinates), [coordinates]);
+  const mapHeight = useMemo(() => Math.max(260, window.height * 0.33), [window.height]);
   const isCompactWidth = window.width < 380;
   const isCompactHeight = window.height < 760;
   const statSpacingStyle = useMemo(
@@ -223,10 +197,7 @@ export const PlannerScreen = () => {
     }, 280);
   };
 
-  const handleSelectSuggestion = (
-    suggestion: PlaceSuggestion,
-    field: "origin" | "destination",
-  ) => {
+  const handleSelectSuggestion = (suggestion: PlaceSuggestion, field: "origin" | "destination") => {
     if (field === "origin") {
       if (originDebounceRef.current) {
         clearTimeout(originDebounceRef.current);
@@ -246,11 +217,7 @@ export const PlannerScreen = () => {
 
   useEffect(() => {
     if (result?.coordinates?.length && result.leg.durationSeconds) {
-      fetchRestaurants(
-        result.coordinates,
-        result.leg.durationSeconds,
-        sliderValue,
-      ).catch(() => {});
+      fetchRestaurants(result.coordinates, result.leg.durationSeconds, sliderValue).catch(() => {});
     } else {
       resetRecommendations();
     }
@@ -335,13 +302,8 @@ export const PlannerScreen = () => {
     navigation.navigate("Menu", { restaurant: summary, trip: tripContext });
   };
 
-  const canPreview =
-    Boolean(origin.trim()) &&
-    Boolean(destination.trim()) &&
-    !isDirectionsLoading;
-  const canClear = Boolean(
-    origin.trim() || destination.trim() || coordinates.length,
-  );
+  const canPreview = Boolean(origin.trim()) && Boolean(destination.trim()) && !isDirectionsLoading;
+  const canClear = Boolean(origin.trim() || destination.trim() || coordinates.length);
   const canAdjustMealWindow = Boolean(totalMinutes && sliderMax > sliderMin);
 
   return (
@@ -357,15 +319,11 @@ export const PlannerScreen = () => {
         </View>
         <View style={styles.userBadge}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {user?.name?.[0]?.toUpperCase() ?? "R"}
-            </Text>
+            <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase() ?? "R"}</Text>
           </View>
           <View style={styles.userDetails}>
             <Text style={styles.userName}>{user?.name ?? "Operator"}</Text>
-            <Text style={styles.userEmail}>
-              {user?.email ?? "demo@routedash.com"}
-            </Text>
+            <Text style={styles.userEmail}>{user?.email ?? "demo@routedash.com"}</Text>
           </View>
           {user?.role === "RESTAURANT" ? (
             <Pressable
@@ -402,9 +360,7 @@ export const PlannerScreen = () => {
               autoCapitalize="none"
             />
             {originAutocomplete.isLoading ? (
-              <Text style={styles.suggestionNote}>
-                Searching for matching addresses…
-              </Text>
+              <Text style={styles.suggestionNote}>Searching for matching addresses…</Text>
             ) : null}
             {originAutocomplete.suggestions.length ? (
               <View style={styles.suggestionList}>
@@ -418,13 +374,9 @@ export const PlannerScreen = () => {
                     ]}
                     onPress={() => handleSelectSuggestion(suggestion, "origin")}
                   >
-                    <Text style={styles.suggestionPrimary}>
-                      {suggestion.primaryText}
-                    </Text>
+                    <Text style={styles.suggestionPrimary}>{suggestion.primaryText}</Text>
                     {suggestion.secondaryText ? (
-                      <Text style={styles.suggestionSecondary}>
-                        {suggestion.secondaryText}
-                      </Text>
+                      <Text style={styles.suggestionSecondary}>{suggestion.secondaryText}</Text>
                     ) : null}
                   </Pressable>
                 ))}
@@ -443,37 +395,26 @@ export const PlannerScreen = () => {
               autoCapitalize="none"
             />
             {destinationAutocomplete.isLoading ? (
-              <Text style={styles.suggestionNote}>
-                Searching for matching addresses…
-              </Text>
+              <Text style={styles.suggestionNote}>Searching for matching addresses…</Text>
             ) : null}
             {destinationAutocomplete.suggestions.length ? (
               <View style={styles.suggestionList}>
-                {destinationAutocomplete.suggestions.map(
-                  (suggestion, index) => (
-                    <Pressable
-                      key={suggestion.id}
-                      style={[
-                        styles.suggestionRow,
-                        index ===
-                          destinationAutocomplete.suggestions.length - 1 &&
-                          styles.suggestionRowLast,
-                      ]}
-                      onPress={() =>
-                        handleSelectSuggestion(suggestion, "destination")
-                      }
-                    >
-                      <Text style={styles.suggestionPrimary}>
-                        {suggestion.primaryText}
-                      </Text>
-                      {suggestion.secondaryText ? (
-                        <Text style={styles.suggestionSecondary}>
-                          {suggestion.secondaryText}
-                        </Text>
-                      ) : null}
-                    </Pressable>
-                  ),
-                )}
+                {destinationAutocomplete.suggestions.map((suggestion, index) => (
+                  <Pressable
+                    key={suggestion.id}
+                    style={[
+                      styles.suggestionRow,
+                      index === destinationAutocomplete.suggestions.length - 1 &&
+                        styles.suggestionRowLast,
+                    ]}
+                    onPress={() => handleSelectSuggestion(suggestion, "destination")}
+                  >
+                    <Text style={styles.suggestionPrimary}>{suggestion.primaryText}</Text>
+                    {suggestion.secondaryText ? (
+                      <Text style={styles.suggestionSecondary}>{suggestion.secondaryText}</Text>
+                    ) : null}
+                  </Pressable>
+                ))}
               </View>
             ) : null}
           </View>
@@ -528,27 +469,19 @@ export const PlannerScreen = () => {
           </View>
 
           <Pressable
-            style={[
-              styles.secondaryButton,
-              styles.clearButton,
-              !canClear && styles.disabled,
-            ]}
+            style={[styles.secondaryButton, styles.clearButton, !canClear && styles.disabled]}
             disabled={!canClear}
             onPress={handleClearPlanner}
           >
             <Text style={styles.secondaryButtonText}>Clear route</Text>
           </Pressable>
 
-          {directionsError ? (
-            <Text style={styles.errorBanner}>{directionsError}</Text>
-          ) : null}
+          {directionsError ? <Text style={styles.errorBanner}>{directionsError}</Text> : null}
           {originAutocomplete.error ? (
             <Text style={styles.inlineError}>{originAutocomplete.error}</Text>
           ) : null}
           {destinationAutocomplete.error ? (
-            <Text style={styles.inlineError}>
-              {destinationAutocomplete.error}
-            </Text>
+            <Text style={styles.inlineError}>{destinationAutocomplete.error}</Text>
           ) : null}
         </View>
 
@@ -573,24 +506,12 @@ export const PlannerScreen = () => {
             >
               {coordinates.length ? (
                 <>
-                  <Polyline
-                    coordinates={coordinates}
-                    strokeColor="#2563eb"
-                    strokeWidth={5}
-                  />
+                  <Polyline coordinates={coordinates} strokeColor="#2563eb" strokeWidth={5} />
                   {startPoint ? (
-                    <Marker
-                      coordinate={startPoint}
-                      title="Origin"
-                      pinColor="#22c55e"
-                    />
+                    <Marker coordinate={startPoint} title="Origin" pinColor="#22c55e" />
                   ) : null}
                   {endPoint ? (
-                    <Marker
-                      coordinate={endPoint}
-                      title="Destination"
-                      pinColor="#ef4444"
-                    />
+                    <Marker coordinate={endPoint} title="Destination" pinColor="#ef4444" />
                   ) : null}
                 </>
               ) : null}
@@ -600,32 +521,25 @@ export const PlannerScreen = () => {
           <View style={styles.routeSummary}>
             <View style={[styles.statCard, statSpacingStyle]}>
               <Text style={styles.statLabel}>Drive time</Text>
-              <Text style={styles.statValue}>
-                {result?.leg.durationText ?? "—"}
-              </Text>
+              <Text style={styles.statValue}>{result?.leg.durationText ?? "—"}</Text>
             </View>
             <View style={[styles.statCard, statSpacingStyle]}>
               <Text style={styles.statLabel}>Distance</Text>
-              <Text style={styles.statValue}>
-                {result?.leg.distanceText ?? "—"}
-              </Text>
+              <Text style={styles.statValue}>{result?.leg.distanceText ?? "—"}</Text>
             </View>
             <View style={styles.statCard}>
               <Text style={styles.statLabel}>Top picks</Text>
               <Text style={styles.statValue}>
                 {isRecommendationsLoading
                   ? "…"
-                  : restaurantRecommendations.length ||
-                    (isRoutePlotted ? "0" : "—")}
+                  : restaurantRecommendations.length || (isRoutePlotted ? "0" : "—")}
               </Text>
             </View>
           </View>
         </View>
 
         {isRoutePlotted ? (
-          <View
-            style={[styles.statusCard, isCompactWidth && styles.cardCompact]}
-          >
+          <View style={[styles.statusCard, isCompactWidth && styles.cardCompact]}>
             <Text style={styles.sectionTitle}>Restaurant picks</Text>
             <Text style={styles.detailSubtitle}>
               {targetTravelMinutes
@@ -646,13 +560,9 @@ export const PlannerScreen = () => {
                     onPress={() => handleOpenRestaurantMenu(restaurant)}
                   >
                     <View style={styles.recommendationHeader}>
-                      <Text style={styles.recommendationName}>
-                        {restaurant.name}
-                      </Text>
+                      <Text style={styles.recommendationName}>{restaurant.name}</Text>
                     </View>
-                    <Text style={styles.recommendationMeta}>
-                      {restaurant.address}
-                    </Text>
+                    <Text style={styles.recommendationMeta}>{restaurant.address}</Text>
                     <Text style={styles.recommendationMeta}>
                       {restaurant.travelTimeMinutes
                         ? `~${restaurant.travelTimeMinutes} min from start`
@@ -663,8 +573,8 @@ export const PlannerScreen = () => {
               </View>
             ) : (
               <Text style={styles.suggestionNote}>
-                We didn’t spot standout restaurants near that window. Try
-                tweaking the route or search again shortly.
+                We didn’t spot standout restaurants near that window. Try tweaking the route or
+                search again shortly.
               </Text>
             )}
 
@@ -678,21 +588,15 @@ export const PlannerScreen = () => {
                 (!origin || !destination) && styles.disabled,
               ]}
               disabled={!origin || !destination}
-              onPress={() =>
-                navigation.navigate("Restaurants", { trip: tripContext })
-              }
+              onPress={() => navigation.navigate("Restaurants", { trip: tripContext })}
             >
-              <Text style={styles.secondaryButtonText}>
-                Browse all registered restaurants
-              </Text>
+              <Text style={styles.secondaryButtonText}>Browse all registered restaurants</Text>
             </Pressable>
           </View>
         ) : null}
 
         {result ? (
-          <View
-            style={[styles.statusCard, isCompactWidth && styles.cardCompact]}
-          >
+          <View style={[styles.statusCard, isCompactWidth && styles.cardCompact]}>
             <Text style={styles.sectionTitle}>Trip synopsis</Text>
             <Text style={styles.detailLabel}>Start</Text>
             <Text style={styles.detailValue}>{result.leg.startAddress}</Text>

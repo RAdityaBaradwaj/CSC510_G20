@@ -1,16 +1,16 @@
-import type { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, Response } from "express";
 
-import { HttpError } from '../errors/HttpError';
-import { prisma } from '../lib/prisma';
-import { COOKIE_NAME, verifySession } from '../utils/jwt';
+import { HttpError } from "../errors/HttpError";
+import { prisma } from "../lib/prisma";
+import { COOKIE_NAME, verifySession } from "../utils/jwt";
 
 export const requireAuth = async (req: Request, _res: Response, next: NextFunction) => {
   try {
-    const bearer = req.headers.authorization?.split(' ');
-    const token = (bearer?.[0] === 'Bearer' && bearer[1]) || req.cookies[COOKIE_NAME] || undefined;
+    const bearer = req.headers.authorization?.split(" ");
+    const token = (bearer?.[0] === "Bearer" && bearer[1]) || req.cookies[COOKIE_NAME] || undefined;
 
     if (!token) {
-      throw new HttpError(401, 'Authentication required');
+      throw new HttpError(401, "Authentication required");
     }
 
     const payload = verifySession(token);
@@ -25,7 +25,7 @@ export const requireAuth = async (req: Request, _res: Response, next: NextFuncti
     });
 
     if (!user) {
-      throw new HttpError(401, 'Invalid session');
+      throw new HttpError(401, "Invalid session");
     }
 
     req.user = {
@@ -42,14 +42,14 @@ export const requireAuth = async (req: Request, _res: Response, next: NextFuncti
       return next(error);
     }
 
-    return next(new HttpError(401, 'Authentication required'));
+    return next(new HttpError(401, "Authentication required"));
   }
 };
 
-export const requireRole = (role: 'CUSTOMER' | 'RESTAURANT') => {
+export const requireRole = (role: "CUSTOMER" | "RESTAURANT") => {
   return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.user || req.user.role !== role) {
-      return next(new HttpError(403, 'Forbidden'));
+      return next(new HttpError(403, "Forbidden"));
     }
     return next();
   };

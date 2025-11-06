@@ -33,22 +33,14 @@ export const apiFetch = async <T>(
   return response.json() as Promise<T>;
 };
 
-export const apiPost = <T>(
-  path: string,
-  body?: unknown,
-  options?: RequestOptions,
-) =>
+export const apiPost = <T>(path: string, body?: unknown, options?: RequestOptions) =>
   apiFetch<T>(path, {
     ...options,
     method: "POST",
     body: body ? JSON.stringify(body) : undefined,
   });
 
-export const apiPatch = <T>(
-  path: string,
-  body?: unknown,
-  options?: RequestOptions,
-) =>
+export const apiPatch = <T>(path: string, body?: unknown, options?: RequestOptions) =>
   apiFetch<T>(path, {
     ...options,
     method: "PATCH",

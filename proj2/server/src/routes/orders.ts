@@ -1,8 +1,8 @@
-import { Router } from 'express';
-import { z } from 'zod';
+import { Router } from "express";
+import { z } from "zod";
 
-import { requireAuth, requireRole } from '../middleware/auth';
-import { createOrder, getOrderForCustomer, listOrdersForUser } from '../services/orderService';
+import { requireAuth, requireRole } from "../middleware/auth";
+import { createOrder, getOrderForCustomer, listOrdersForUser } from "../services/orderService";
 
 const orderPayload = z.object({
   restaurantId: z.string().uuid(),
@@ -24,7 +24,7 @@ const orderIdParam = z.object({
 });
 export const ordersRouter = Router();
 
-ordersRouter.post('/', requireAuth, requireRole('CUSTOMER'), async (req, res, next) => {
+ordersRouter.post("/", requireAuth, requireRole("CUSTOMER"), async (req, res, next) => {
   try {
     const payload = orderPayload.parse(req.body);
     const order = await createOrder(req.user!.id, payload);
@@ -34,7 +34,7 @@ ordersRouter.post('/', requireAuth, requireRole('CUSTOMER'), async (req, res, ne
   }
 });
 
-ordersRouter.get('/', requireAuth, requireRole('CUSTOMER'), async (req, res, next) => {
+ordersRouter.get("/", requireAuth, requireRole("CUSTOMER"), async (req, res, next) => {
   try {
     const orders = await listOrdersForUser(req.user!.id);
     res.json({ orders });
@@ -43,7 +43,7 @@ ordersRouter.get('/', requireAuth, requireRole('CUSTOMER'), async (req, res, nex
   }
 });
 
-ordersRouter.get('/:orderId', requireAuth, requireRole('CUSTOMER'), async (req, res, next) => {
+ordersRouter.get("/:orderId", requireAuth, requireRole("CUSTOMER"), async (req, res, next) => {
   try {
     const { orderId } = orderIdParam.parse(req.params);
     const order = await getOrderForCustomer(orderId, req.user!.id);

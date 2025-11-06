@@ -94,34 +94,18 @@ export const LoginScreen = () => {
 
           <View style={styles.toggleRow}>
             <Pressable
-              style={[
-                styles.toggleButton,
-                mode === "login" && styles.toggleActive,
-              ]}
+              style={[styles.toggleButton, mode === "login" && styles.toggleActive]}
               onPress={() => setMode("login")}
             >
-              <Text
-                style={
-                  mode === "login" ? styles.toggleTextActive : styles.toggleText
-                }
-              >
+              <Text style={mode === "login" ? styles.toggleTextActive : styles.toggleText}>
                 Login
               </Text>
             </Pressable>
             <Pressable
-              style={[
-                styles.toggleButton,
-                mode === "register" && styles.toggleActive,
-              ]}
+              style={[styles.toggleButton, mode === "register" && styles.toggleActive]}
               onPress={() => setMode("register")}
             >
-              <Text
-                style={
-                  mode === "register"
-                    ? styles.toggleTextActive
-                    : styles.toggleText
-                }
-              >
+              <Text style={mode === "register" ? styles.toggleTextActive : styles.toggleText}>
                 Register
               </Text>
             </Pressable>
@@ -130,36 +114,18 @@ export const LoginScreen = () => {
           {mode === "register" && (
             <View style={styles.toggleRow}>
               <Pressable
-                style={[
-                  styles.toggleButton,
-                  role === "CUSTOMER" && styles.toggleActive,
-                ]}
+                style={[styles.toggleButton, role === "CUSTOMER" && styles.toggleActive]}
                 onPress={() => setRole("CUSTOMER")}
               >
-                <Text
-                  style={
-                    role === "CUSTOMER"
-                      ? styles.toggleTextActive
-                      : styles.toggleText
-                  }
-                >
+                <Text style={role === "CUSTOMER" ? styles.toggleTextActive : styles.toggleText}>
                   Customer
                 </Text>
               </Pressable>
               <Pressable
-                style={[
-                  styles.toggleButton,
-                  role === "RESTAURANT" && styles.toggleActive,
-                ]}
+                style={[styles.toggleButton, role === "RESTAURANT" && styles.toggleActive]}
                 onPress={() => setRole("RESTAURANT")}
               >
-                <Text
-                  style={
-                    role === "RESTAURANT"
-                      ? styles.toggleTextActive
-                      : styles.toggleText
-                  }
-                >
+                <Text style={role === "RESTAURANT" ? styles.toggleTextActive : styles.toggleText}>
                   Restaurant
                 </Text>
               </Pressable>
@@ -168,9 +134,7 @@ export const LoginScreen = () => {
 
           {mode === "register" && (
             <View style={styles.formGroup}>
-              <Text style={styles.label}>
-                {role === "RESTAURANT" ? "Owner name" : "Name"}
-              </Text>
+              <Text style={styles.label}>{role === "RESTAURANT" ? "Owner name" : "Name"}</Text>
               <TextInput
                 style={styles.input}
                 value={form.name}
@@ -232,9 +196,7 @@ export const LoginScreen = () => {
                   style={styles.input}
                   value={form.restaurantName}
                   placeholder="RouteDash Kitchen"
-                  onChangeText={(value) =>
-                    handleChange("restaurantName", value)
-                  }
+                  onChangeText={(value) => handleChange("restaurantName", value)}
                 />
               </View>
               <View style={styles.formGroup}>

@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { vi } from "vitest";
 
 type MockRecord = Record<string, any>;
 
@@ -56,9 +56,9 @@ export const createPrismaMock = () => {
 
 const resetDeepMock = (obj: MockRecord) => {
   Object.values(obj).forEach((value) => {
-    if (typeof value === 'function' && 'mockReset' in value) {
+    if (typeof value === "function" && "mockReset" in value) {
       value.mockReset();
-    } else if (value && typeof value === 'object') {
+    } else if (value && typeof value === "object") {
       resetDeepMock(value as MockRecord);
     }
   });

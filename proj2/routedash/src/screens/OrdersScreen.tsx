@@ -12,11 +12,7 @@ import {
 } from "react-native";
 
 import { apiFetch } from "../api/client";
-import type {
-  OrderSummary,
-  OrderStatusValue,
-  RootStackParamList,
-} from "../navigation/types";
+import type { OrderSummary, OrderStatusValue, RootStackParamList } from "../navigation/types";
 
 type OrdersScreenProps = NativeStackScreenProps<RootStackParamList, "Orders">;
 
@@ -25,9 +21,7 @@ type OrdersResponse = {
     OrderSummary & {
       status: OrderStatusValue;
       createdAt?: string;
-      items: Array<
-        OrderSummary["items"][number] & { menuItem?: { name?: string | null } }
-      >;
+      items: Array<OrderSummary["items"][number] & { menuItem?: { name?: string | null } }>;
     }
   >;
 };
@@ -101,9 +95,7 @@ export const OrdersScreen = ({ navigation }: OrdersScreenProps) => {
   );
 
   const renderOrder = ({ item }: { item: OrderListItem }) => {
-    const createdLabel = item.createdAt
-      ? new Date(item.createdAt).toLocaleString()
-      : undefined;
+    const createdLabel = item.createdAt ? new Date(item.createdAt).toLocaleString() : undefined;
     return (
       <Pressable style={styles.card} onPress={() => handleViewOrder(item)}>
         <View style={styles.cardHeader}>
@@ -112,16 +104,9 @@ export const OrdersScreen = ({ navigation }: OrdersScreenProps) => {
             <Text style={styles.subMeta}>
               {item.routeOrigin} → {item.routeDestination}
             </Text>
-            {createdLabel ? (
-              <Text style={styles.subMeta}>{createdLabel}</Text>
-            ) : null}
+            {createdLabel ? <Text style={styles.subMeta}>{createdLabel}</Text> : null}
           </View>
-          <View
-            style={[
-              styles.statusChip,
-              { backgroundColor: STATUS_COLORS[item.status] },
-            ]}
-          >
+          <View style={[styles.statusChip, { backgroundColor: STATUS_COLORS[item.status] }]}>
             <Text style={styles.statusText}>{STATUS_LABELS[item.status]}</Text>
           </View>
         </View>
@@ -131,9 +116,7 @@ export const OrdersScreen = ({ navigation }: OrdersScreenProps) => {
         </View>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Total</Text>
-          <Text style={styles.summaryAmount}>
-            ${(item.totalCents / 100).toFixed(2)}
-          </Text>
+          <Text style={styles.summaryAmount}>${(item.totalCents / 100).toFixed(2)}</Text>
         </View>
         <Text style={styles.cta}>View status</Text>
       </Pressable>
@@ -150,18 +133,12 @@ export const OrdersScreen = ({ navigation }: OrdersScreenProps) => {
 
   return (
     <FlatList
-      contentContainerStyle={
-        orders.length ? styles.listContent : styles.emptyContent
-      }
+      contentContainerStyle={orders.length ? styles.listContent : styles.emptyContent}
       data={orders}
       keyExtractor={(order) => order.id}
       renderItem={renderOrder}
       refreshControl={
-        <RefreshControl
-          tintColor="#2563EB"
-          refreshing={isRefreshing}
-          onRefresh={handleRefresh}
-        />
+        <RefreshControl tintColor="#2563EB" refreshing={isRefreshing} onRefresh={handleRefresh} />
       }
       ListEmptyComponent={
         <View style={styles.emptyState}>

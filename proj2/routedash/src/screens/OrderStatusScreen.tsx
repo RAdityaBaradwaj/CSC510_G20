@@ -3,16 +3,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { apiFetch } from "../api/client";
-import type {
-  OrderSummary,
-  OrderStatusValue,
-  RootStackParamList,
-} from "../navigation/types";
+import type { OrderSummary, OrderStatusValue, RootStackParamList } from "../navigation/types";
 
-type OrderStatusScreenProps = NativeStackScreenProps<
-  RootStackParamList,
-  "OrderStatus"
->;
+type OrderStatusScreenProps = NativeStackScreenProps<RootStackParamList, "OrderStatus">;
 
 type ApiOrderResponse = {
   order: Omit<OrderSummary, "items"> & {
@@ -104,9 +97,7 @@ export const OrderStatusScreen = ({ route }: OrderStatusScreenProps) => {
               name:
                 item.name ??
                 item.menuItem?.name ??
-                fallback.items.find(
-                  (existing) => existing.menuItemId === item.menuItemId,
-                )?.name ??
+                fallback.items.find((existing) => existing.menuItemId === item.menuItemId)?.name ??
                 "Item",
             })),
           };
@@ -138,8 +129,7 @@ export const OrderStatusScreen = ({ route }: OrderStatusScreenProps) => {
   const subtotalCents =
     order.subtotalCents ??
     order.items.reduce((sum, item) => sum + item.priceCents * item.quantity, 0);
-  const inferredTax =
-    order.taxCents ?? Math.max(order.totalCents - subtotalCents, 0);
+  const inferredTax = order.taxCents ?? Math.max(order.totalCents - subtotalCents, 0);
   const totalCents = order.totalCents ?? subtotalCents + inferredTax;
 
   const statusMessage = STATUS_MESSAGES[order.status];
@@ -147,9 +137,7 @@ export const OrderStatusScreen = ({ route }: OrderStatusScreenProps) => {
   const step = STATUS_PROGRESS[order.status];
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>
-        Order #{order.id.slice(0, 6).toUpperCase()}
-      </Text>
+      <Text style={styles.header}>Order #{order.id.slice(0, 6).toUpperCase()}</Text>
       <Text style={styles.sub}>Restaurant: {order.restaurant.name}</Text>
       <Text style={styles.sub}>Pickup ETA: {order.pickupEtaMin} min</Text>
       <Text style={styles.sub}>
@@ -159,16 +147,12 @@ export const OrderStatusScreen = ({ route }: OrderStatusScreenProps) => {
       <View style={styles.statusBox}>
         <View style={styles.statusHeader}>
           <Text style={styles.status}>{statusMessage}</Text>
-          <View
-            style={[styles.statusChip, styles[STATUS_CHIP_KEYS[order.status]]]}
-          >
+          <View style={[styles.statusChip, styles[STATUS_CHIP_KEYS[order.status]]]}>
             <Text style={styles.statusChipText}>{statusLabel}</Text>
           </View>
         </View>
         {order.status !== "CANCELED" ? (
-          <Text style={styles.statusStep}>
-            Step {Math.min(step + 1, 3)} of 3
-          </Text>
+          <Text style={styles.statusStep}>Step {Math.min(step + 1, 3)} of 3</Text>
         ) : null}
       </View>
       <View style={styles.orderCard}>
@@ -178,17 +162,13 @@ export const OrderStatusScreen = ({ route }: OrderStatusScreenProps) => {
             <Text style={styles.itemName}>
               {item.quantity} × {item.name ?? "Menu item"}
             </Text>
-            <Text style={styles.itemPrice}>
-              {formatCurrency(item.priceCents * item.quantity)}
-            </Text>
+            <Text style={styles.itemPrice}>{formatCurrency(item.priceCents * item.quantity)}</Text>
           </View>
         ))}
         <View style={styles.divider} />
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Subtotal</Text>
-          <Text style={styles.summaryValue}>
-            {formatCurrency(subtotalCents)}
-          </Text>
+          <Text style={styles.summaryValue}>{formatCurrency(subtotalCents)}</Text>
         </View>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Tax</Text>

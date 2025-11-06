@@ -24,11 +24,7 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   isHydrating: boolean;
   login: (payload: { email: string; password: string }) => Promise<void>;
-  registerCustomer: (payload: {
-    name: string;
-    email: string;
-    password: string;
-  }) => Promise<void>;
+  registerCustomer: (payload: { name: string; email: string; password: string }) => Promise<void>;
   registerRestaurant: (payload: {
     name: string;
     email: string;
@@ -89,10 +85,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const registerCustomer = useCallback(
     async (payload: { name: string; email: string; password: string }) => {
-      const response = await apiPost<{ user: AuthUser }>(
-        "/api/auth/register-customer",
-        payload,
-      );
+      const response = await apiPost<{ user: AuthUser }>("/api/auth/register-customer", payload);
       await persistUser(response.user);
     },
     [persistUser],
@@ -106,10 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       restaurantName: string;
       address: string;
     }) => {
-      const response = await apiPost<{ user: AuthUser }>(
-        "/api/auth/register-restaurant",
-        payload,
-      );
+      const response = await apiPost<{ user: AuthUser }>("/api/auth/register-restaurant", payload);
       await persistUser(response.user);
     },
     [persistUser],

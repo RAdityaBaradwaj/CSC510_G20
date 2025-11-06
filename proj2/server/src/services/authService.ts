@@ -1,8 +1,8 @@
-import { Prisma, UserRole } from '@prisma/client';
+import { Prisma, UserRole } from "@prisma/client";
 
-import { HttpError } from '../errors/HttpError';
-import { prisma } from '../lib/prisma';
-import { hashPassword, verifyPassword } from '../utils/password';
+import { HttpError } from "../errors/HttpError";
+import { prisma } from "../lib/prisma";
+import { hashPassword, verifyPassword } from "../utils/password";
 
 type CreateCustomerInput = {
   name: string;
@@ -50,7 +50,7 @@ export const createCustomer = async ({ name, email, password }: CreateCustomerIn
     return user;
   } catch (error) {
     if (isUniqueConstraintError(error)) {
-      throw new HttpError(409, 'Email already registered');
+      throw new HttpError(409, "Email already registered");
     }
     throw error;
   }
@@ -94,7 +94,7 @@ export const createRestaurantOwner = async ({
     return result;
   } catch (error) {
     if (isUniqueConstraintError(error)) {
-      throw new HttpError(409, 'Email already registered');
+      throw new HttpError(409, "Email already registered");
     }
     throw error;
   }
@@ -112,13 +112,13 @@ export const authenticateUser = async (email: string, password: string) => {
   });
 
   if (!user) {
-    throw new HttpError(401, 'Invalid credentials');
+    throw new HttpError(401, "Invalid credentials");
   }
 
   const isValid = await verifyPassword(password, user.passwordHash);
 
   if (!isValid) {
-    throw new HttpError(401, 'Invalid credentials');
+    throw new HttpError(401, "Invalid credentials");
   }
 
   return user;
@@ -126,8 +126,8 @@ export const authenticateUser = async (email: string, password: string) => {
 
 const isUniqueConstraintError = (error: unknown) =>
   error instanceof Prisma.PrismaClientKnownRequestError
-    ? error.code === 'P2002'
-    : typeof error === 'object' &&
+    ? error.code === "P2002"
+    : typeof error === "object" &&
       error !== null &&
-      'code' in error &&
-      (error as { code: string }).code === 'P2002';
+      "code" in error &&
+      (error as { code: string }).code === "P2002";

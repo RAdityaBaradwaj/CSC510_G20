@@ -34,12 +34,7 @@ export type CartItem = {
   quantity: number;
 };
 
-export type OrderStatusValue =
-  | "PENDING"
-  | "PREPARING"
-  | "READY"
-  | "COMPLETED"
-  | "CANCELED";
+export type OrderStatusValue = "PENDING" | "PREPARING" | "READY" | "COMPLETED" | "CANCELED";
 
 export type OrderSummary = {
   id: string;

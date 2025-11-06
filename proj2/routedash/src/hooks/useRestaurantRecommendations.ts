@@ -22,8 +22,7 @@ type RecommendationState = {
   targetTravelMinutes: number | null;
 };
 
-const clamp = (value: number, min: number, max: number) =>
-  Math.min(Math.max(value, min), max);
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 const toRadians = (value: number) => (value * Math.PI) / 180;
 
@@ -64,14 +63,9 @@ const pickTargetCoordinate = (
     ratio = clamp(rawRatio, 0.05, 0.95);
   }
 
-  const index = Math.min(
-    Math.round(ratio * (coordinates.length - 1)),
-    coordinates.length - 1,
-  );
+  const index = Math.min(Math.round(ratio * (coordinates.length - 1)), coordinates.length - 1);
   const coordinate = coordinates[index] ?? coordinates[coordinates.length - 1];
-  const minuteMark = totalMinutes
-    ? Math.round(totalMinutes * ratio)
-    : Math.round(desiredMinutes);
+  const minuteMark = totalMinutes ? Math.round(totalMinutes * ratio) : Math.round(desiredMinutes);
 
   return {
     coordinate,
@@ -89,11 +83,7 @@ export const useRestaurantRecommendations = () => {
     });
 
   const fetchRestaurants = useCallback(
-    async (
-      coordinates: Coordinate[],
-      durationSeconds: number,
-      preferredMinuteMark: number,
-    ) => {
+    async (coordinates: Coordinate[], durationSeconds: number, preferredMinuteMark: number) => {
       if (!coordinates.length) {
         setState((prev) => ({
           ...prev,
@@ -105,16 +95,11 @@ export const useRestaurantRecommendations = () => {
         return;
       }
 
-      const target = pickTargetCoordinate(
-        coordinates,
-        durationSeconds,
-        preferredMinuteMark,
-      );
+      const target = pickTargetCoordinate(coordinates, durationSeconds, preferredMinuteMark);
       if (!target) {
         setState({
           isLoading: false,
-          error:
-            "We couldn't determine a midpoint for this route. Try plotting a different trip.",
+          error: "We couldn't determine a midpoint for this route. Try plotting a different trip.",
           items: [],
           targetTravelMinutes: null,
         });
@@ -160,10 +145,7 @@ export const useRestaurantRecommendations = () => {
               distance,
             };
           })
-          .filter(
-            (restaurant) =>
-              restaurant.distance <= 8000 || restaurant.distance === 0,
-          )
+          .filter((restaurant) => restaurant.distance <= 8000 || restaurant.distance === 0)
           .slice(0, 10)
           .map(({ distance: _distance, ...rest }) => rest);
 
@@ -174,10 +156,7 @@ export const useRestaurantRecommendations = () => {
           targetTravelMinutes: target.minuteMark,
         });
       } catch (placesError) {
-        console.warn(
-          "RouteDash useRestaurantRecommendations: failed",
-          placesError,
-        );
+        console.warn("RouteDash useRestaurantRecommendations: failed", placesError);
         setState({
           isLoading: false,
           error:

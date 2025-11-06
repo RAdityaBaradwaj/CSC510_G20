@@ -1,10 +1,10 @@
-import { OrderStatus } from '@prisma/client';
-import { Router } from 'express';
-import { z } from 'zod';
+import { OrderStatus } from "@prisma/client";
+import { Router } from "express";
+import { z } from "zod";
 
-import { requireAuth, requireRole } from '../middleware/auth';
-import { ensureRestaurantOwnership } from '../middleware/ownership';
-import { listOrdersForRestaurant, updateOrderStatusForRestaurant } from '../services/orderService';
+import { requireAuth, requireRole } from "../middleware/auth";
+import { ensureRestaurantOwnership } from "../middleware/ownership";
+import { listOrdersForRestaurant, updateOrderStatusForRestaurant } from "../services/orderService";
 import {
   getActiveRestaurants,
   getRestaurantMenu,
@@ -14,7 +14,7 @@ import {
   createMenuItem,
   updateMenuItem,
   deleteMenuItem,
-} from '../services/restaurantService';
+} from "../services/restaurantService";
 
 const restaurantIdParam = z.object({
   restaurantId: z.string().uuid(),
@@ -47,7 +47,7 @@ const orderStatusPayload = z.object({
 
 export const restaurantRouter = Router();
 
-restaurantRouter.get('/', async (_req, res, next) => {
+restaurantRouter.get("/", async (_req, res, next) => {
   try {
     const restaurants = await getActiveRestaurants();
     res.json({ restaurants });
@@ -56,7 +56,7 @@ restaurantRouter.get('/', async (_req, res, next) => {
   }
 });
 
-restaurantRouter.get('/:restaurantId/menu', async (req, res, next) => {
+restaurantRouter.get("/:restaurantId/menu", async (req, res, next) => {
   try {
     const { restaurantId } = restaurantIdParam.parse(req.params);
     const result = await getRestaurantMenu(restaurantId);
@@ -67,9 +67,9 @@ restaurantRouter.get('/:restaurantId/menu', async (req, res, next) => {
 });
 
 restaurantRouter.get(
-  '/:restaurantId/orders',
+  "/:restaurantId/orders",
   requireAuth,
-  requireRole('RESTAURANT'),
+  requireRole("RESTAURANT"),
   ensureRestaurantOwnership,
   async (req, res, next) => {
     try {
@@ -83,9 +83,9 @@ restaurantRouter.get(
 );
 
 restaurantRouter.post(
-  '/:restaurantId/menu/sections',
+  "/:restaurantId/menu/sections",
   requireAuth,
-  requireRole('RESTAURANT'),
+  requireRole("RESTAURANT"),
   ensureRestaurantOwnership,
   async (req, res, next) => {
     try {
@@ -100,9 +100,9 @@ restaurantRouter.post(
 );
 
 restaurantRouter.patch(
-  '/:restaurantId/menu/sections/:sectionId',
+  "/:restaurantId/menu/sections/:sectionId",
   requireAuth,
-  requireRole('RESTAURANT'),
+  requireRole("RESTAURANT"),
   ensureRestaurantOwnership,
   async (req, res, next) => {
     try {
@@ -117,9 +117,9 @@ restaurantRouter.patch(
 );
 
 restaurantRouter.delete(
-  '/:restaurantId/menu/sections/:sectionId',
+  "/:restaurantId/menu/sections/:sectionId",
   requireAuth,
-  requireRole('RESTAURANT'),
+  requireRole("RESTAURANT"),
   ensureRestaurantOwnership,
   async (req, res, next) => {
     try {
@@ -133,9 +133,9 @@ restaurantRouter.delete(
 );
 
 restaurantRouter.post(
-  '/:restaurantId/menu/items',
+  "/:restaurantId/menu/items",
   requireAuth,
-  requireRole('RESTAURANT'),
+  requireRole("RESTAURANT"),
   ensureRestaurantOwnership,
   async (req, res, next) => {
     try {
@@ -150,9 +150,9 @@ restaurantRouter.post(
 );
 
 restaurantRouter.patch(
-  '/:restaurantId/menu/items/:itemId',
+  "/:restaurantId/menu/items/:itemId",
   requireAuth,
-  requireRole('RESTAURANT'),
+  requireRole("RESTAURANT"),
   ensureRestaurantOwnership,
   async (req, res, next) => {
     try {
@@ -167,9 +167,9 @@ restaurantRouter.patch(
 );
 
 restaurantRouter.delete(
-  '/:restaurantId/menu/items/:itemId',
+  "/:restaurantId/menu/items/:itemId",
   requireAuth,
-  requireRole('RESTAURANT'),
+  requireRole("RESTAURANT"),
   ensureRestaurantOwnership,
   async (req, res, next) => {
     try {
@@ -183,9 +183,9 @@ restaurantRouter.delete(
 );
 
 restaurantRouter.patch(
-  '/:restaurantId/orders/:orderId',
+  "/:restaurantId/orders/:orderId",
   requireAuth,
-  requireRole('RESTAURANT'),
+  requireRole("RESTAURANT"),
   ensureRestaurantOwnership,
   async (req, res, next) => {
     try {

@@ -16,11 +16,7 @@ import {
 
 import { apiFetch, apiPost } from "../api/client";
 import { useAuth } from "../context/AuthContext";
-import type {
-  CartItem,
-  OrderStatusValue,
-  RootStackParamList,
-} from "../navigation/types";
+import type { CartItem, OrderStatusValue, RootStackParamList } from "../navigation/types";
 
 const TAX_RATE = 0.0825;
 
@@ -80,8 +76,7 @@ const PAYMENT_OPTIONS: Array<{
 ];
 
 const formatCurrency = (cents: number) => `$${(cents / 100).toFixed(2)}`;
-const sanitizeCardNumber = (value: string) =>
-  value.replace(/\D/g, "").slice(0, 16);
+const sanitizeCardNumber = (value: string) => value.replace(/\D/g, "").slice(0, 16);
 const formatCardNumberDisplay = (digits: string) =>
   digits
     .replace(/\s+/g, "")
@@ -102,9 +97,7 @@ const sanitizeCvv = (value: string) => value.replace(/\D/g, "").slice(0, 4);
 export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
   const { restaurant, trip } = route.params;
   const initialCartCount = route.params.cart?.length ?? 0;
-  const [cartItems, setCartItems] = useState<CartItem[]>(
-    route.params.cart ?? [],
-  );
+  const [cartItems, setCartItems] = useState<CartItem[]>(route.params.cart ?? []);
   const [isLoading, setIsLoading] = useState(initialCartCount === 0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -117,9 +110,7 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
     cvv: "",
   });
   const [showApplePaySheet, setShowApplePaySheet] = useState(false);
-  const [selectedApplePayCard, setSelectedApplePayCard] = useState<
-    string | null
-  >(null);
+  const [selectedApplePayCard, setSelectedApplePayCard] = useState<string | null>(null);
   const [applePayAuthenticated, setApplePayAuthenticated] = useState(false);
 
   const { user } = useAuth();
@@ -150,14 +141,10 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
   }, [initialCartCount, loadCartFromApi]);
 
   const subtotalCents = useMemo(
-    () =>
-      cartItems.reduce((sum, item) => sum + item.priceCents * item.quantity, 0),
+    () => cartItems.reduce((sum, item) => sum + item.priceCents * item.quantity, 0),
     [cartItems],
   );
-  const taxCents = useMemo(
-    () => Math.round(subtotalCents * TAX_RATE),
-    [subtotalCents],
-  );
+  const taxCents = useMemo(() => Math.round(subtotalCents * TAX_RATE), [subtotalCents]);
   const totalWithTaxCents = subtotalCents + taxCents;
 
   const applePayCards = useMemo<ApplePayCard[]>(
@@ -173,8 +160,7 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
     [],
   );
   const selectedAppleCard = useMemo(
-    () =>
-      applePayCards.find((card) => card.id === selectedApplePayCard) ?? null,
+    () => applePayCards.find((card) => card.id === selectedApplePayCard) ?? null,
     [applePayCards, selectedApplePayCard],
   );
 
@@ -241,9 +227,7 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
   };
 
   const removeItem = (menuItemId: string) => {
-    setCartItems((prev) =>
-      prev.filter((item) => item.menuItemId !== menuItemId),
-    );
+    setCartItems((prev) => prev.filter((item) => item.menuItemId !== menuItemId));
   };
 
   const handlePlaceOrder = async () => {
@@ -255,22 +239,38 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
       setIsSubmitting(true);
       setSubmitError(null);
 
-      const paymentDetails =
-        paymentMethod === "card"
-          ? {
-              method: "card",
-              cardholderName: cardDetails.name.trim(),
-              last4: sanitizeCardNumber(cardDetails.number).slice(-4),
-              expiry: formatExpiryDisplay(sanitizeExpiry(cardDetails.expiry)),
-            }
-          : paymentMethod === "apple_pay"
-            ? {
-                method: "apple_pay",
-                wallet: "Apple Pay",
-                last4: selectedAppleCard?.last4 ?? "",
-                token: `apple-pay-${selectedAppleCard?.id ?? "token"}`,
-              }
-            : { method: "arrival" };
+      let paymentDetails:
+        | {
+            method: "card";
+            cardholderName: string;
+            last4: string;
+            expiry: string;
+          }
+        | {
+            method: "apple_pay";
+            wallet: string;
+            last4: string;
+            token: string;
+          }
+        | { method: "arrival" };
+
+      if (paymentMethod === "card") {
+        paymentDetails = {
+          method: "card",
+          cardholderName: cardDetails.name.trim(),
+          last4: sanitizeCardNumber(cardDetails.number).slice(-4),
+          expiry: formatExpiryDisplay(sanitizeExpiry(cardDetails.expiry)),
+        };
+      } else if (paymentMethod === "apple_pay") {
+        paymentDetails = {
+          method: "apple_pay",
+          wallet: "Apple Pay",
+          last4: selectedAppleCard?.last4 ?? "",
+          token: `apple-pay-${selectedAppleCard?.id ?? "token"}`,
+        };
+      } else {
+        paymentDetails = { method: "arrival" };
+      }
 
       const payload = {
         userId: user?.id,
@@ -304,8 +304,7 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
           ...item,
           name:
             item.menuItem?.name ??
-            cartItems.find((entry) => entry.menuItemId === item.menuItemId)
-              ?.name ??
+            cartItems.find((entry) => entry.menuItemId === item.menuItemId)?.name ??
             "Item",
         })),
       };
@@ -314,9 +313,7 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
         order: nextOrder,
       });
     } catch (error) {
-      setSubmitError(
-        (error as Error).message || "Unable to place order. Please try again.",
-      );
+      setSubmitError((error as Error).message || "Unable to place order. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -353,9 +350,7 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
         <View style={styles.cartRow}>
           <View style={styles.itemDetails}>
             <Text style={styles.itemName}>{item.name}</Text>
-            <Text style={styles.itemPrice}>
-              {formatCurrency(item.priceCents)}
-            </Text>
+            <Text style={styles.itemPrice}>{formatCurrency(item.priceCents)}</Text>
           </View>
           <View style={styles.quantityGroup}>
             <Pressable
@@ -375,10 +370,7 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
             </Pressable>
           </View>
         </View>
-        <Pressable
-          style={styles.removeBtn}
-          onPress={() => removeItem(item.menuItemId)}
-        >
+        <Pressable style={styles.removeBtn} onPress={() => removeItem(item.menuItemId)}>
           <Text style={styles.removeText}>Remove</Text>
         </Pressable>
       </View>
@@ -413,21 +405,15 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
             <Text style={styles.sectionLabel}>Order Summary</Text>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Subtotal</Text>
-              <Text style={styles.summaryValue}>
-                {formatCurrency(subtotalCents)}
-              </Text>
+              <Text style={styles.summaryValue}>{formatCurrency(subtotalCents)}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Tax</Text>
-              <Text style={styles.summaryValue}>
-                {formatCurrency(taxCents)}
-              </Text>
+              <Text style={styles.summaryValue}>{formatCurrency(taxCents)}</Text>
             </View>
             <View style={[styles.summaryRow, styles.summaryTotalRow]}>
               <Text style={styles.summaryTotal}>Total</Text>
-              <Text style={styles.summaryTotal}>
-                {formatCurrency(totalWithTaxCents)}
-              </Text>
+              <Text style={styles.summaryTotal}>{formatCurrency(totalWithTaxCents)}</Text>
             </View>
           </View>
 
@@ -438,10 +424,7 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
               return (
                 <Pressable
                   key={option.id}
-                  style={[
-                    styles.paymentOption,
-                    isSelected && styles.paymentOptionSelected,
-                  ]}
+                  style={[styles.paymentOption, isSelected && styles.paymentOptionSelected]}
                   onPress={() => setPaymentMethod(option.id)}
                 >
                   <View style={styles.paymentIndicatorOuter}>
@@ -528,9 +511,7 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
                   </View>
                 </View>
                 {!isCardDetailsValid ? (
-                  <Text style={styles.cardHelpText}>
-                    Enter full card details to continue.
-                  </Text>
+                  <Text style={styles.cardHelpText}>Enter full card details to continue.</Text>
                 ) : null}
               </View>
             ) : null}
@@ -540,9 +521,7 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
                 {selectedAppleCard ? (
                   <>
                     <View style={styles.applePaySummary}>
-                      <Text style={styles.applePaySummaryText}>
-                        {selectedAppleCard.label}
-                      </Text>
+                      <Text style={styles.applePaySummaryText}>{selectedAppleCard.label}</Text>
                       <Pressable onPress={openApplePaySheet}>
                         <Text style={styles.applePayChangeBtn}>Change</Text>
                       </Pressable>
@@ -559,33 +538,21 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
                         : "Authenticate with Face ID / Touch ID to continue."}
                     </Text>
                     {!applePayAuthenticated ? (
-                      <Pressable
-                        style={styles.applePayTriggerBtn}
-                        onPress={openApplePaySheet}
-                      >
-                        <Text style={styles.applePayTriggerText}>
-                          Authenticate with Apple Pay
-                        </Text>
+                      <Pressable style={styles.applePayTriggerBtn} onPress={openApplePaySheet}>
+                        <Text style={styles.applePayTriggerText}>Authenticate with Apple Pay</Text>
                       </Pressable>
                     ) : null}
                   </>
                 ) : (
-                  <Pressable
-                    style={styles.applePayTriggerBtn}
-                    onPress={openApplePaySheet}
-                  >
-                    <Text style={styles.applePayTriggerText}>
-                      Choose Apple Pay Card
-                    </Text>
+                  <Pressable style={styles.applePayTriggerBtn} onPress={openApplePaySheet}>
+                    <Text style={styles.applePayTriggerText}>Choose Apple Pay Card</Text>
                   </Pressable>
                 )}
               </View>
             ) : null}
           </View>
 
-          {submitError ? (
-            <Text style={styles.submitError}>{submitError}</Text>
-          ) : null}
+          {submitError ? <Text style={styles.submitError}>{submitError}</Text> : null}
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -617,28 +584,21 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Apple Pay</Text>
-            <Text style={styles.modalCaption}>
-              Select a card to authenticate your payment.
-            </Text>
+            <Text style={styles.modalCaption}>Select a card to authenticate your payment.</Text>
 
             {applePayCards.map((card) => {
               const isSelected = card.id === selectedApplePayCard;
               return (
                 <Pressable
                   key={card.id}
-                  style={[
-                    styles.modalOption,
-                    isSelected && styles.modalOptionSelected,
-                  ]}
+                  style={[styles.modalOption, isSelected && styles.modalOptionSelected]}
                   onPress={() => {
                     setSelectedApplePayCard(card.id);
                     setApplePayAuthenticated(false);
                   }}
                 >
                   <Text style={styles.modalOptionText}>{card.label}</Text>
-                  {isSelected ? (
-                    <Text style={styles.modalOptionBadge}>Selected</Text>
-                  ) : null}
+                  {isSelected ? <Text style={styles.modalOptionBadge}>Selected</Text> : null}
                 </Pressable>
               );
             })}
@@ -661,14 +621,9 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
                 );
               }}
             >
-              <Text style={styles.modalPrimaryText}>
-                Authenticate & Continue
-              </Text>
+              <Text style={styles.modalPrimaryText}>Authenticate & Continue</Text>
             </Pressable>
-            <Pressable
-              style={styles.modalSecondaryBtn}
-              onPress={() => setShowApplePaySheet(false)}
-            >
+            <Pressable style={styles.modalSecondaryBtn} onPress={() => setShowApplePaySheet(false)}>
               <Text style={styles.modalSecondaryText}>Cancel</Text>
             </Pressable>
           </View>

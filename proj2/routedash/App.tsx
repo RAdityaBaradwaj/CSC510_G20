@@ -16,10 +16,7 @@ import { OrderStatusScreen } from "./src/screens/OrderStatusScreen";
 import { OrdersScreen } from "./src/screens/OrdersScreen";
 import { PlannerScreen } from "./src/screens/PlannerScreen";
 import { RestaurantsScreen } from "./src/screens/RestaurantsScreen";
-import type {
-  CustomerTabParamList,
-  RootStackParamList,
-} from "./src/navigation/types";
+import type { CustomerTabParamList, RootStackParamList } from "./src/navigation/types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<CustomerTabParamList>();
