@@ -340,7 +340,7 @@ export const PlannerScreen = () => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <View style={styles.headerRow}>
-          <View>
+          <View style={styles.headerInfo}>
             <Text style={styles.brandBadge}>RouteDash</Text>
             <Text style={styles.headerTitle}>Trip Planner</Text>
             <Text style={styles.headerSubtitle}>{statusLabel}</Text>
@@ -723,6 +723,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 12,
+    flexWrap: "wrap",
+    gap: 12
+  },
+  headerInfo: {
+    flexShrink: 1,
+    minWidth: 0
   },
   brandBadge: {
     fontSize: 14,

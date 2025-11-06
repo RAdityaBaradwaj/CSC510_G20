@@ -71,5 +71,11 @@ export type RootStackParamList = {
     trip: TripContext;
   };
   OrderStatus: { order: OrderSummary };
+  Orders: undefined;
   MerchantDashboard: undefined;
+};
+
+export type CustomerTabParamList = {
+  Trip: undefined;
+  PreviousOrders: undefined;
 };
