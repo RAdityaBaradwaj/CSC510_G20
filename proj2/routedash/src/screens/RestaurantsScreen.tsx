@@ -44,7 +44,7 @@ export const RestaurantsScreen = ({
       }
     };
 
-    void load();
+    load().catch(() => {});
   }, []);
 
   const handleOpen = (restaurant: RestaurantSummary) => {

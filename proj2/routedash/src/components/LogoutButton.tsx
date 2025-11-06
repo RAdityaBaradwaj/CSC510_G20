@@ -18,10 +18,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 12,
-    backgroundColor: "#E0E7FF"
+    backgroundColor: "#E0E7FF",
   },
   text: {
     color: "#1E3A8A",
-    fontWeight: "600"
-  }
+    fontWeight: "600",
+  },
 });

@@ -409,10 +409,13 @@ export const MerchantDashboardScreen = () => {
                 <Text style={styles.meta}>No sections yet</Text>
               }
             />
-        <Pressable style={[styles.primaryBtn, styles.addItemBtn]} onPress={handleAddItem}>
-          <Text style={styles.primaryBtnText}>Add Item</Text>
-        </Pressable>
-      </View>
+            <Pressable
+              style={[styles.primaryBtn, styles.addItemBtn]}
+              onPress={handleAddItem}
+            >
+              <Text style={styles.primaryBtnText}>Add Item</Text>
+            </Pressable>
+          </View>
 
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Menu</Text>
@@ -516,7 +519,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   addItemBtn: {
-    marginTop: 12
+    marginTop: 12,
   },
   primaryBtnText: { color: "#FFF", fontWeight: "700" },
   logoutBtn: {

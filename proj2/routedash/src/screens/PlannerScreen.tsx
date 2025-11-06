@@ -141,6 +141,14 @@ export const PlannerScreen = () => {
     () => (isCompactWidth ? undefined : styles.statCardSpacing),
     [isCompactWidth],
   );
+  const scrollContentDynamicStyle = useMemo(
+    () => ({
+      paddingHorizontal: isCompactWidth ? 16 : 24,
+      paddingBottom: 120,
+      flexGrow: 1,
+    }),
+    [isCompactWidth],
+  );
 
   const sliderMin = totalMinutes ? 1 : 15;
   const sliderMax = totalMinutes ?? 120;
@@ -197,7 +205,7 @@ export const PlannerScreen = () => {
       return;
     }
     originDebounceRef.current = setTimeout(() => {
-      void originAutocomplete.fetchSuggestions(value);
+      originAutocomplete.fetchSuggestions(value).catch(() => {});
     }, 280);
   };
 
@@ -211,7 +219,7 @@ export const PlannerScreen = () => {
       return;
     }
     destinationDebounceRef.current = setTimeout(() => {
-      void destinationAutocomplete.fetchSuggestions(value);
+      destinationAutocomplete.fetchSuggestions(value).catch(() => {});
     }, 280);
   };
 
@@ -238,11 +246,11 @@ export const PlannerScreen = () => {
 
   useEffect(() => {
     if (result?.coordinates?.length && result.leg.durationSeconds) {
-      void fetchRestaurants(
+      fetchRestaurants(
         result.coordinates,
         result.leg.durationSeconds,
         sliderValue,
-      );
+      ).catch(() => {});
     } else {
       resetRecommendations();
     }
@@ -371,15 +379,11 @@ export const PlannerScreen = () => {
       </View>
 
       <ScrollView
-        style={{ flex: 1 }}
+        style={styles.flexContainer}
         contentContainerStyle={[
           styles.scrollContent,
           isCompactHeight && styles.scrollContentCompact,
-          {
-            paddingHorizontal: isCompactWidth ? 16 : 24,
-            paddingBottom: 120, // ensures space for bottom content
-            flexGrow: 1, // enables proper vertical scrolling
-          },
+          scrollContentDynamicStyle,
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -710,6 +714,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F1F5F9",
   },
+  flexContainer: {
+    flex: 1,
+  },
   header: {
     paddingHorizontal: 24,
     paddingBottom: 12,
@@ -724,11 +731,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
     flexWrap: "wrap",
-    gap: 12
+    gap: 12,
   },
   headerInfo: {
     flexShrink: 1,
-    minWidth: 0
+    minWidth: 0,
   },
   brandBadge: {
     fontSize: 14,

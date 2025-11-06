@@ -8,11 +8,15 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  View
+  View,
 } from "react-native";
 
 import { apiFetch } from "../api/client";
-import type { OrderSummary, OrderStatusValue, RootStackParamList } from "../navigation/types";
+import type {
+  OrderSummary,
+  OrderStatusValue,
+  RootStackParamList,
+} from "../navigation/types";
 
 type OrdersScreenProps = NativeStackScreenProps<RootStackParamList, "Orders">;
 
@@ -21,7 +25,9 @@ type OrdersResponse = {
     OrderSummary & {
       status: OrderStatusValue;
       createdAt?: string;
-      items: Array<OrderSummary["items"][number] & { menuItem?: { name?: string | null } }>;
+      items: Array<
+        OrderSummary["items"][number] & { menuItem?: { name?: string | null } }
+      >;
     }
   >;
 };
@@ -33,7 +39,7 @@ const STATUS_LABELS: Record<OrderStatusValue, string> = {
   PREPARING: "Processing",
   READY: "Ready",
   COMPLETED: "Completed",
-  CANCELED: "Canceled"
+  CANCELED: "Canceled",
 };
 
 const STATUS_COLORS: Record<OrderStatusValue, string> = {
@@ -41,7 +47,7 @@ const STATUS_COLORS: Record<OrderStatusValue, string> = {
   PREPARING: "#FDE68A",
   READY: "#BBF7D0",
   COMPLETED: "#DCFCE7",
-  CANCELED: "#FEE2E2"
+  CANCELED: "#FEE2E2",
 };
 
 export const OrdersScreen = ({ navigation }: OrdersScreenProps) => {
@@ -64,8 +70,8 @@ export const OrdersScreen = ({ navigation }: OrdersScreenProps) => {
           menuItemId: item.menuItemId,
           quantity: item.quantity,
           priceCents: item.priceCents,
-          name: item.menuItem?.name ?? item.name ?? "Item"
-        }))
+          name: item.menuItem?.name ?? item.name ?? "Item",
+        })),
       }));
       setOrders(normalized);
     } catch (err) {
@@ -78,20 +84,20 @@ export const OrdersScreen = ({ navigation }: OrdersScreenProps) => {
 
   useFocusEffect(
     useCallback(() => {
-      void loadOrders(true);
-    }, [loadOrders])
+      loadOrders(true).catch(() => {});
+    }, [loadOrders]),
   );
 
   const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
-    void loadOrders();
+    loadOrders().catch(() => {});
   }, [loadOrders]);
 
   const handleViewOrder = useCallback(
     (order: OrderListItem) => {
       navigation.navigate("OrderStatus", { order });
     },
-    [navigation]
+    [navigation],
   );
 
   const renderOrder = ({ item }: { item: OrderListItem }) => {
@@ -103,10 +109,19 @@ export const OrdersScreen = ({ navigation }: OrdersScreenProps) => {
         <View style={styles.cardHeader}>
           <View style={styles.cardInfo}>
             <Text style={styles.restaurant}>{item.restaurant.name}</Text>
-            <Text style={styles.subMeta}>{item.routeOrigin} → {item.routeDestination}</Text>
-            {createdLabel ? <Text style={styles.subMeta}>{createdLabel}</Text> : null}
+            <Text style={styles.subMeta}>
+              {item.routeOrigin} → {item.routeDestination}
+            </Text>
+            {createdLabel ? (
+              <Text style={styles.subMeta}>{createdLabel}</Text>
+            ) : null}
           </View>
-          <View style={[styles.statusChip, { backgroundColor: STATUS_COLORS[item.status] }] }>
+          <View
+            style={[
+              styles.statusChip,
+              { backgroundColor: STATUS_COLORS[item.status] },
+            ]}
+          >
             <Text style={styles.statusText}>{STATUS_LABELS[item.status]}</Text>
           </View>
         </View>
@@ -116,7 +131,9 @@ export const OrdersScreen = ({ navigation }: OrdersScreenProps) => {
         </View>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Total</Text>
-          <Text style={styles.summaryAmount}>${(item.totalCents / 100).toFixed(2)}</Text>
+          <Text style={styles.summaryAmount}>
+            ${(item.totalCents / 100).toFixed(2)}
+          </Text>
         </View>
         <Text style={styles.cta}>View status</Text>
       </Pressable>
@@ -133,14 +150,28 @@ export const OrdersScreen = ({ navigation }: OrdersScreenProps) => {
 
   return (
     <FlatList
-      contentContainerStyle={orders.length ? styles.listContent : styles.emptyContent}
+      contentContainerStyle={
+        orders.length ? styles.listContent : styles.emptyContent
+      }
       data={orders}
       keyExtractor={(order) => order.id}
       renderItem={renderOrder}
-      refreshControl={<RefreshControl tintColor="#2563EB" refreshing={isRefreshing} onRefresh={handleRefresh} />}
+      refreshControl={
+        <RefreshControl
+          tintColor="#2563EB"
+          refreshing={isRefreshing}
+          onRefresh={handleRefresh}
+        />
+      }
       ListEmptyComponent={
         <View style={styles.emptyState}>
-          {error ? <Text style={styles.errorText}>{error}</Text> : <Text style={styles.emptyText}>No orders yet. Place your first order to see it here.</Text>}
+          {error ? (
+            <Text style={styles.errorText}>{error}</Text>
+          ) : (
+            <Text style={styles.emptyText}>
+              No orders yet. Place your first order to see it here.
+            </Text>
+          )}
         </View>
       }
     />
@@ -152,18 +183,18 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F8FAFC"
+    backgroundColor: "#F8FAFC",
   },
   listContent: {
     padding: 16,
     gap: 16,
-    backgroundColor: "#F8FAFC"
+    backgroundColor: "#F8FAFC",
   },
   emptyContent: {
     flexGrow: 1,
     justifyContent: "center",
     padding: 16,
-    backgroundColor: "#F8FAFC"
+    backgroundColor: "#F8FAFC",
   },
   card: {
     backgroundColor: "#FFF",
@@ -172,17 +203,17 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 10,
-    gap: 12
+    gap: 12,
   },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    gap: 12
+    gap: 12,
   },
   cardInfo: {
     flex: 1,
-    gap: 4
+    gap: 4,
   },
   restaurant: { fontSize: 18, fontWeight: "700", color: "#0F172A" },
   subMeta: { color: "#475569", fontSize: 13 },
@@ -190,13 +221,13 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 999,
-    alignSelf: "flex-start"
+    alignSelf: "flex-start",
   },
   statusText: { fontWeight: "600", color: "#0F172A" },
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center"
+    alignItems: "center",
   },
   summaryLabel: { color: "#475569" },
   summaryValue: { fontWeight: "600", color: "#1E293B" },
@@ -210,8 +241,8 @@ const styles = StyleSheet.create({
     gap: 8,
     shadowColor: "#000",
     shadowOpacity: 0.05,
-    shadowRadius: 10
+    shadowRadius: 10,
   },
   emptyText: { color: "#475569", textAlign: "center" },
-  errorText: { color: "#B91C1C", textAlign: "center" }
+  errorText: { color: "#B91C1C", textAlign: "center" },
 });
