@@ -2,28 +2,33 @@ import { Router, Response } from "express";
 import { z } from "zod";
 
 import { HttpError } from "../errors/HttpError";
-import { createCustomer, createRestaurantOwner, authenticateUser, serializeUser } from "../services/authService";
-import { COOKIE_NAME, cookieOptions, signSession } from "../utils/jwt";
 import { requireAuth } from "../middleware/auth";
+import {
+  createCustomer,
+  createRestaurantOwner,
+  authenticateUser,
+  serializeUser,
+} from "../services/authService";
+import { COOKIE_NAME, cookieOptions, signSession } from "../utils/jwt";
 
 export const authRouter = Router();
 
 const registerCustomerSchema = z.object({
   name: z.string().min(1),
   email: z.string().email(),
-  password: z.string().min(8)
+  password: z.string().min(8),
 });
 
 const registerRestaurantSchema = registerCustomerSchema.extend({
   restaurantName: z.string().min(1),
   address: z.string().min(1),
   latitude: z.number().optional(),
-  longitude: z.number().optional()
+  longitude: z.number().optional(),
 });
 
 const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(1)
+  password: z.string().min(1),
 });
 
 const sendSession = (res: Response, user: ReturnType<typeof serializeUser>) => {

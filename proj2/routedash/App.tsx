@@ -1,9 +1,11 @@
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
+import type { TextStyle } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { LogoutButton } from "./src/components/LogoutButton";
@@ -25,14 +27,21 @@ const AppTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    background: "#F8FAFC"
-  }
+    background: "#F8FAFC",
+  },
 };
 
-const logoutHeaderOptions = {
+type HeaderTitleTextStyle = Pick<TextStyle, "fontWeight" | "fontSize" | "fontFamily"> & {
+  color?: string;
+};
+
+const headerTitleStyle: HeaderTitleTextStyle = {
+  fontWeight: "600" as TextStyle["fontWeight"],
+};
+
+const logoutHeaderOptions: NativeStackNavigationOptions = {
   headerRight: () => <LogoutButton />,
-  headerRightContainerStyle: { paddingRight: 12 },
-  headerTitleStyle: { fontWeight: "600" }
+  headerTitleStyle,
 };
 
 const TripStack = createNativeStackNavigator<RootStackParamList>();
@@ -47,7 +56,11 @@ const TripStackNavigator = () => (
     <TripStack.Screen
       name="Restaurants"
       component={RestaurantsScreen}
-      options={{ headerTitle: "Restaurants", animation: "slide_from_right", ...logoutHeaderOptions }}
+      options={{
+        headerTitle: "Restaurants",
+        animation: "slide_from_right",
+        ...logoutHeaderOptions,
+      }}
     />
     <TripStack.Screen
       name="Menu"
@@ -55,18 +68,26 @@ const TripStackNavigator = () => (
       options={({ route }) => ({
         headerTitle: route.params.restaurant.name,
         animation: "slide_from_right",
-        ...logoutHeaderOptions
+        ...logoutHeaderOptions,
       })}
     />
     <TripStack.Screen
       name="Checkout"
       component={CheckoutPage}
-      options={{ headerTitle: "Checkout", animation: "slide_from_right", ...logoutHeaderOptions }}
+      options={{
+        headerTitle: "Checkout",
+        animation: "slide_from_right",
+        ...logoutHeaderOptions,
+      }}
     />
     <TripStack.Screen
       name="OrderStatus"
       component={OrderStatusScreen}
-      options={{ headerTitle: "Order Status", animation: "slide_from_right", ...logoutHeaderOptions }}
+      options={{
+        headerTitle: "Order Status",
+        animation: "slide_from_right",
+        ...logoutHeaderOptions,
+      }}
     />
   </TripStack.Navigator>
 );
@@ -78,12 +99,20 @@ const OrdersStackNavigator = () => (
     <OrdersStack.Screen
       name="Orders"
       component={OrdersScreen}
-      options={{ headerTitle: "My Orders", animation: "fade_from_bottom", ...logoutHeaderOptions }}
+      options={{
+        headerTitle: "My Orders",
+        animation: "fade_from_bottom",
+        ...logoutHeaderOptions,
+      }}
     />
     <OrdersStack.Screen
       name="OrderStatus"
       component={OrderStatusScreen}
-      options={{ headerTitle: "Order Status", animation: "slide_from_right", ...logoutHeaderOptions }}
+      options={{
+        headerTitle: "Order Status",
+        animation: "slide_from_right",
+        ...logoutHeaderOptions,
+      }}
     />
   </OrdersStack.Navigator>
 );
@@ -108,19 +137,26 @@ const MerchantNavigator = () => (
     <Stack.Screen
       name="MerchantDashboard"
       component={MerchantDashboardScreen}
-      options={{ headerTitle: "Merchant Dashboard", animation: "fade_from_bottom" }}
+      options={{
+        headerTitle: "Merchant Dashboard",
+        animation: "fade_from_bottom",
+      }}
     />
     <Stack.Screen
       name="Restaurants"
       component={RestaurantsScreen}
-      options={{ headerTitle: "Restaurants", animation: "slide_from_right", ...logoutHeaderOptions }}
+      options={{
+        headerTitle: "Restaurants",
+        animation: "slide_from_right",
+        ...logoutHeaderOptions,
+      }}
     />
     <Stack.Screen
       name="Menu"
       component={MenuScreen}
       options={({ route }) => ({
         headerTitle: route.params.restaurant.name,
-        animation: "slide_from_right"
+        animation: "slide_from_right",
       })}
     />
   </Stack.Navigator>
@@ -150,7 +186,7 @@ const Router = () => {
           flex: 1,
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#F8FAFC"
+          backgroundColor: "#F8FAFC",
         }}
       >
         <ActivityIndicator size="large" color="#2563eb" />
@@ -161,7 +197,11 @@ const Router = () => {
   return (
     <NavigationContainer theme={AppTheme}>
       {isAuthenticated ? (
-        user?.role === "RESTAURANT" ? <MerchantNavigator /> : <CustomerNavigator />
+        user?.role === "RESTAURANT" ? (
+          <MerchantNavigator />
+        ) : (
+          <CustomerNavigator />
+        )
       ) : (
         <PublicNavigator />
       )}

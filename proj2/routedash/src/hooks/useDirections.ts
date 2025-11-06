@@ -1,8 +1,9 @@
 import NetInfo from "@react-native-community/netinfo";
 import Constants from "expo-constants";
 import { useCallback, useMemo, useState } from "react";
-import type { Coordinate } from "../utils/polyline";
+
 import { decodePolyline } from "../utils/polyline";
+import type { Coordinate } from "../utils/polyline";
 
 type RouteLeg = {
   distanceText: string;
@@ -31,11 +32,40 @@ const getApiKey = (): string => {
   return (extra?.googleMapsApiKey as string | undefined) ?? "";
 };
 
+const parseDurationSeconds = (duration: unknown): number => {
+  if (typeof duration === "number") {
+    return duration;
+  }
+  if (!duration) {
+    return 0;
+  }
+
+  if (typeof duration === "string") {
+    const normalized = duration.endsWith("s") ? duration.slice(0, -1) : duration;
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  if (typeof duration === "object" && duration !== null) {
+    const recordDuration = duration as { seconds?: unknown };
+    if (typeof recordDuration.seconds === "string") {
+      const parsed = Number(recordDuration.seconds);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    if (typeof recordDuration.seconds === "number") {
+      return recordDuration.seconds;
+    }
+  }
+
+  return 0;
+};
+
 export const useDirections = () => {
   const [{ isLoading, error, result }, setState] = useState<UseDirectionsState>({
     isLoading: false,
     error: null,
-    result: null
+    result: null,
   });
 
   const fetchRoute = useCallback(async (origin: string, destination: string) => {
@@ -45,7 +75,7 @@ export const useDirections = () => {
     if (!inputOrigin || !inputDestination) {
       setState((prev) => ({
         ...prev,
-        error: "Enter both a starting point and a destination to plot your trip."
+        error: "Enter both a starting point and a destination to plot your trip.",
       }));
       return false;
     }
@@ -55,7 +85,7 @@ export const useDirections = () => {
       setState((prev) => ({
         ...prev,
         error:
-          "We couldn't confirm an internet connection. Check connectivity and try generating the route again."
+          "We couldn't confirm an internet connection. Check connectivity and try generating the route again.",
       }));
       return false;
     }
@@ -65,7 +95,7 @@ export const useDirections = () => {
       setState((prev) => ({
         ...prev,
         error:
-          "Missing Google Maps API key. Add GOOGLE_MAPS_API_KEY to your local .env file before requesting directions."
+          "Missing Google Maps API key. Add GOOGLE_MAPS_API_KEY to your local .env file before requesting directions.",
       }));
       return false;
     }
@@ -79,26 +109,22 @@ export const useDirections = () => {
           "Content-Type": "application/json",
           "X-Goog-Api-Key": apiKey,
           "X-Goog-FieldMask":
-            "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs.duration,routes.legs.localizedValues.duration,routes.legs.localizedValues.distance,routes.legs.distanceMeters"
+            "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs.duration,routes.legs.localizedValues.duration,routes.legs.localizedValues.distance,routes.legs.distanceMeters",
         },
         body: JSON.stringify({
-          origin: {
-            address: inputOrigin
-          },
-          destination: {
-            address: inputDestination
-          },
+          origin: { address: inputOrigin },
+          destination: { address: inputDestination },
           travelMode: "DRIVE",
           routingPreference: "TRAFFIC_AWARE",
           computeAlternativeRoutes: false,
           routeModifiers: {
             avoidTolls: false,
             avoidHighways: false,
-            avoidFerries: false
+            avoidFerries: false,
           },
           languageCode: "en-US",
-          units: "IMPERIAL"
-        })
+          units: "IMPERIAL",
+        }),
       });
 
       if (!response.ok) {
@@ -116,36 +142,12 @@ export const useDirections = () => {
       const encodedPolyline = route.polyline?.encodedPolyline;
       const coordinates = encodedPolyline ? decodePolyline(encodedPolyline) : [];
 
-      const parseDurationSeconds = (duration: any): number => {
-        if (!duration) {
-          return 0;
-        }
-        if (typeof duration === "string") {
-          const normalized = duration.endsWith("s") ? duration.slice(0, -1) : duration;
-          const parsed = Number(normalized);
-          return Number.isFinite(parsed) ? parsed : 0;
-        }
-        if (typeof duration === "object" && typeof duration.seconds !== "undefined") {
-          const seconds = duration.seconds;
-          if (typeof seconds === "string") {
-            const parsed = Number(seconds);
-            return Number.isFinite(parsed) ? parsed : 0;
-          }
-          if (typeof seconds === "number") {
-            return seconds;
-          }
-        }
-        if (typeof duration === "number") {
-          return duration;
-        }
-        return 0;
-      };
-
-      const durationSeconds = parseDurationSeconds(leg?.duration);
-      const distanceMeters =
-        typeof leg?.distanceMeters === "number" && leg.distanceMeters > 0
-          ? leg.distanceMeters
-          : route.distanceMeters ?? 0;
+      const hasDistance = typeof leg?.distanceMeters === "number" && leg.distanceMeters > 0;
+      const fallbackDistance =
+        typeof route.distanceMeters === "number" && route.distanceMeters > 0
+          ? route.distanceMeters
+          : 0;
+      const distanceMeters = hasDistance ? leg.distanceMeters : fallbackDistance;
 
       const nextResult: DirectionsResult = {
         coordinates,
@@ -153,16 +155,16 @@ export const useDirections = () => {
           distanceText: leg?.localizedValues?.distance?.text ?? "—",
           distanceMeters,
           durationText: leg?.localizedValues?.duration?.text ?? "—",
-          durationSeconds,
+          durationSeconds: parseDurationSeconds(leg?.duration),
           startAddress: inputOrigin,
-          endAddress: inputDestination
-        }
+          endAddress: inputDestination,
+        },
       };
 
       setState({
         isLoading: false,
         error: null,
-        result: nextResult
+        result: nextResult,
       });
 
       return true;
@@ -172,9 +174,8 @@ export const useDirections = () => {
         isLoading: false,
         error:
           "We hit an issue fetching directions. Confirm the Google Routes API is enabled for your key and try again.",
-        result: null
+        result: null,
       });
-
       return false;
     }
   }, []);
@@ -189,8 +190,8 @@ export const useDirections = () => {
       error,
       result,
       fetchRoute,
-      reset
+      reset,
     }),
-    [error, fetchRoute, isLoading, reset, result]
+    [error, fetchRoute, isLoading, reset, result],
   );
 };

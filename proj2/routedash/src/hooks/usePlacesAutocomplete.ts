@@ -30,7 +30,7 @@ export const usePlacesAutocomplete = () => {
   const [{ isLoading, error, suggestions }, setState] = useState<AutocompleteState>({
     isLoading: false,
     error: null,
-    suggestions: []
+    suggestions: [],
   });
   const sessionTokenRef = useRef<string | null>(null);
 
@@ -45,75 +45,77 @@ export const usePlacesAutocomplete = () => {
     setState((prev) => ({
       ...prev,
       error: null,
-      suggestions: []
+      suggestions: [],
     }));
     sessionTokenRef.current = null;
   }, []);
 
-  const fetchSuggestions = useCallback(async (input: string) => {
-    const trimmed = input.trim();
-    if (trimmed.length < 3) {
-      clearSuggestions();
-      return [];
-    }
-
-    const key = getApiKey();
-    if (!key) {
-      setState({
-        isLoading: false,
-        error: "Missing Google Maps API key. Add GOOGLE_MAPS_API_KEY to your .env file.",
-        suggestions: []
-      });
-      return [];
-    }
-
-    setState((prev) => ({
-      ...prev,
-      isLoading: true,
-      error: null
-    }));
-
-    try {
-      const sessionToken = ensureSessionToken();
-      const params = new URLSearchParams({
-        input: trimmed,
-        key,
-        sessiontoken: sessionToken
-      });
-
-      const response = await fetch(`${AUTOCOMPLETE_ENDPOINT}&${params.toString()}`);
-      const payload = await response.json();
-
-      if (payload.status !== "OK" || !Array.isArray(payload.predictions)) {
-        throw new Error(payload.error_message ?? "Autocomplete request failed");
+  const fetchSuggestions = useCallback(
+    async (input: string) => {
+      const trimmed = input.trim();
+      if (trimmed.length < 3) {
+        clearSuggestions();
+        return [];
       }
 
-      const mapped: PlaceSuggestion[] = payload.predictions.map((prediction: any) => ({
-        id: prediction.place_id,
-        description: prediction.description,
-        primaryText: prediction.structured_formatting?.main_text ?? prediction.description,
-        secondaryText: prediction.structured_formatting?.secondary_text ?? ""
+      const key = getApiKey();
+      if (!key) {
+        setState({
+          isLoading: false,
+          error: "Missing Google Maps API key. Add GOOGLE_MAPS_API_KEY to your .env file.",
+          suggestions: [],
+        });
+        return [];
+      }
+
+      setState((prev) => ({
+        ...prev,
+        isLoading: true,
+        error: null,
       }));
 
-      setState({
-        isLoading: false,
-        error: null,
-        suggestions: mapped
-      });
+      try {
+        const sessionToken = ensureSessionToken();
+        const params = new URLSearchParams({
+          input: trimmed,
+          key,
+          sessiontoken: sessionToken,
+        });
 
-      return mapped;
-    } catch (autoError) {
-      console.warn("RouteDash usePlacesAutocomplete: failed fetching suggestions", autoError);
-      setState({
-        isLoading: false,
-        error:
-          "We hit a snag while looking up addresses. Please try again in a few seconds.",
-        suggestions: []
-      });
-      sessionTokenRef.current = null;
-      return [];
-    }
-  }, [clearSuggestions]);
+        const response = await fetch(`${AUTOCOMPLETE_ENDPOINT}&${params.toString()}`);
+        const payload = await response.json();
+
+        if (payload.status !== "OK" || !Array.isArray(payload.predictions)) {
+          throw new Error(payload.error_message ?? "Autocomplete request failed");
+        }
+
+        const mapped: PlaceSuggestion[] = payload.predictions.map((prediction: any) => ({
+          id: prediction.place_id,
+          description: prediction.description,
+          primaryText: prediction.structured_formatting?.main_text ?? prediction.description,
+          secondaryText: prediction.structured_formatting?.secondary_text ?? "",
+        }));
+
+        setState({
+          isLoading: false,
+          error: null,
+          suggestions: mapped,
+        });
+
+        return mapped;
+      } catch (autoError) {
+        console.warn("RouteDash usePlacesAutocomplete: failed fetching suggestions", autoError);
+        setState({
+          isLoading: false,
+          error: "We hit a snag while looking up addresses. Please try again in a few seconds.",
+          suggestions: [],
+        });
+        sessionTokenRef.current = null;
+        return [];
+      }
+    },
+    [clearSuggestions],
+  );
 
   return useMemo(
     () => ({
@@ -121,8 +123,8 @@ export const usePlacesAutocomplete = () => {
       error,
       suggestions,
       fetchSuggestions,
-      clearSuggestions
+      clearSuggestions,
     }),
-    [clearSuggestions, error, fetchSuggestions, isLoading, suggestions]
+    [clearSuggestions, error, fetchSuggestions, isLoading, suggestions],
   );
 };

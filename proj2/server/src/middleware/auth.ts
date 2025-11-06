@@ -1,14 +1,13 @@
 import type { NextFunction, Request, Response } from "express";
 
-import { prisma } from "../lib/prisma";
 import { HttpError } from "../errors/HttpError";
+import { prisma } from "../lib/prisma";
 import { COOKIE_NAME, verifySession } from "../utils/jwt";
 
 export const requireAuth = async (req: Request, _res: Response, next: NextFunction) => {
   try {
     const bearer = req.headers.authorization?.split(" ");
-    const token =
-      (bearer?.[0] === "Bearer" && bearer[1]) || req.cookies[COOKIE_NAME] || undefined;
+    const token = (bearer?.[0] === "Bearer" && bearer[1]) || req.cookies[COOKIE_NAME] || undefined;
 
     if (!token) {
       throw new HttpError(401, "Authentication required");
@@ -20,9 +19,9 @@ export const requireAuth = async (req: Request, _res: Response, next: NextFuncti
       include: {
         restaurants: {
           select: { id: true },
-          take: 1
-        }
-      }
+          take: 1,
+        },
+      },
     });
 
     if (!user) {
@@ -34,7 +33,7 @@ export const requireAuth = async (req: Request, _res: Response, next: NextFuncti
       email: user.email,
       name: user.name,
       role: user.role,
-      restaurantId: user.restaurants[0]?.id
+      restaurantId: user.restaurants[0]?.id,
     };
 
     next();

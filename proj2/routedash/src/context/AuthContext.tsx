@@ -1,12 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
+import React, {
   ReactNode,
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
-  useState
+  useState,
 } from "react";
 
 import { apiFetch, apiPost } from "../api/client";
@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    void bootstrap();
+    bootstrap().catch(() => {});
   }, []);
 
   const persistUser = useCallback(async (nextUser: AuthUser | null) => {
@@ -74,10 +74,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = useCallback(
     async ({ email, password }: { email: string; password: string }) => {
-      const response = await apiPost<{ user: AuthUser }>("/api/auth/login", { email, password });
+      const response = await apiPost<{ user: AuthUser }>("/api/auth/login", {
+        email,
+        password,
+      });
       await persistUser(response.user);
     },
-    [persistUser]
+    [persistUser],
   );
 
   const registerCustomer = useCallback(
@@ -85,7 +88,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const response = await apiPost<{ user: AuthUser }>("/api/auth/register-customer", payload);
       await persistUser(response.user);
     },
-    [persistUser]
+    [persistUser],
   );
 
   const registerRestaurant = useCallback(
@@ -99,7 +102,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const response = await apiPost<{ user: AuthUser }>("/api/auth/register-restaurant", payload);
       await persistUser(response.user);
     },
-    [persistUser]
+    [persistUser],
   );
 
   const logout = useCallback(async () => {
@@ -115,9 +118,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       login,
       registerCustomer,
       registerRestaurant,
-      logout
+      logout,
     }),
-    [isHydrating, login, logout, registerCustomer, registerRestaurant, user]
+    [isHydrating, login, logout, registerCustomer, registerRestaurant, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

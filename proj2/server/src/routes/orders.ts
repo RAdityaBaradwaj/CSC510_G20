@@ -10,17 +10,17 @@ const orderPayload = z.object({
     .array(
       z.object({
         menuItemId: z.string().uuid(),
-        quantity: z.number().int().positive().default(1)
-      })
+        quantity: z.number().int().positive().default(1),
+      }),
     )
     .min(1),
   pickupEtaMin: z.number().int().positive(),
   routeOrigin: z.string().min(1),
-  routeDestination: z.string().min(1)
+  routeDestination: z.string().min(1),
 });
 
 const orderIdParam = z.object({
-  orderId: z.string().uuid()
+  orderId: z.string().uuid(),
 });
 export const ordersRouter = Router();
 

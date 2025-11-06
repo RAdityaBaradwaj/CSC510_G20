@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { requireAuth, requireRole } from "../middleware/auth";
 import { ensureRestaurantOwnership } from "../middleware/ownership";
+import { listOrdersForRestaurant, updateOrderStatusForRestaurant } from "../services/orderService";
 import {
   getActiveRestaurants,
   getRestaurantMenu,
@@ -12,22 +13,21 @@ import {
   deleteMenuSection,
   createMenuItem,
   updateMenuItem,
-  deleteMenuItem
+  deleteMenuItem,
 } from "../services/restaurantService";
-import { listOrdersForRestaurant, updateOrderStatusForRestaurant } from "../services/orderService";
 
 const restaurantIdParam = z.object({
-  restaurantId: z.string().uuid()
+  restaurantId: z.string().uuid(),
 });
 
 const sectionPayload = z.object({
   title: z.string().min(1),
-  position: z.number().int().nonnegative().optional()
+  position: z.number().int().nonnegative().optional(),
 });
 
 const sectionUpdatePayload = z.object({
   title: z.string().min(1).optional(),
-  position: z.number().int().nonnegative().optional()
+  position: z.number().int().nonnegative().optional(),
 });
 
 const itemPayload = z.object({
@@ -36,13 +36,13 @@ const itemPayload = z.object({
   description: z.string().optional(),
   priceCents: z.number().int().nonnegative(),
   isAvailable: z.boolean().optional(),
-  tags: z.array(z.string()).optional()
+  tags: z.array(z.string()).optional(),
 });
 
 const itemUpdatePayload = itemPayload.partial();
 
 const orderStatusPayload = z.object({
-  status: z.nativeEnum(OrderStatus)
+  status: z.nativeEnum(OrderStatus),
 });
 
 export const restaurantRouter = Router();
@@ -79,7 +79,7 @@ restaurantRouter.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 restaurantRouter.post(
@@ -96,7 +96,7 @@ restaurantRouter.post(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 restaurantRouter.patch(
@@ -113,7 +113,7 @@ restaurantRouter.patch(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 restaurantRouter.delete(
@@ -129,7 +129,7 @@ restaurantRouter.delete(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 restaurantRouter.post(
@@ -146,7 +146,7 @@ restaurantRouter.post(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 restaurantRouter.patch(
@@ -163,7 +163,7 @@ restaurantRouter.patch(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 restaurantRouter.delete(
@@ -179,7 +179,7 @@ restaurantRouter.delete(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 restaurantRouter.patch(
@@ -191,10 +191,14 @@ restaurantRouter.patch(
     try {
       const params = restaurantIdParam.extend({ orderId: z.string().uuid() }).parse(req.params);
       const payload = orderStatusPayload.parse(req.body);
-      const order = await updateOrderStatusForRestaurant(params.restaurantId, params.orderId, payload.status);
+      const order = await updateOrderStatusForRestaurant(
+        params.restaurantId,
+        params.orderId,
+        payload.status,
+      );
       res.json({ order });
     } catch (error) {
       next(error);
     }
-  }
+  },
 );

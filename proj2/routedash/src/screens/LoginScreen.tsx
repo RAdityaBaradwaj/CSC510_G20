@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  View
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -21,7 +21,7 @@ const INITIAL_FORM = {
   email: "customer@example.com",
   password: "password123!",
   restaurantName: "",
-  address: ""
+  address: "",
 };
 
 export const LoginScreen = () => {
@@ -47,14 +47,18 @@ export const LoginScreen = () => {
       if (mode === "login") {
         await login({ email: form.email, password: form.password });
       } else if (role === "CUSTOMER") {
-        await registerCustomer({ name: form.name || "Traveler", email: form.email, password: form.password });
+        await registerCustomer({
+          name: form.name || "Traveler",
+          email: form.email,
+          password: form.password,
+        });
       } else {
         await registerRestaurant({
           name: form.name || "Owner",
           email: form.email,
           password: form.password,
           restaurantName: form.restaurantName || "RouteDash Kitchen",
-          address: form.address || "123 Main St"
+          address: form.address || "123 Main St",
         });
       }
     } catch (err) {
@@ -67,7 +71,10 @@ export const LoginScreen = () => {
   const canSubmit =
     Boolean(form.email.trim()) &&
     Boolean(form.password.trim()) &&
-    (mode === "login" || (role === "CUSTOMER" ? Boolean((form.name || form.email).trim()) : Boolean(form.restaurantName.trim()))) &&
+    (mode === "login" ||
+      (role === "CUSTOMER"
+        ? Boolean((form.name || form.email).trim())
+        : Boolean(form.restaurantName.trim()))) &&
     !isSubmitting;
 
   return (
@@ -79,20 +86,28 @@ export const LoginScreen = () => {
       >
         <View style={styles.card}>
           <Text style={styles.title}>Welcome to RouteDash</Text>
-          <Text style={styles.subtitle}>{mode === "login" ? "Sign in to plan your route or manage your restaurant." : "Create an account to start ordering or managing menus."}</Text>
+          <Text style={styles.subtitle}>
+            {mode === "login"
+              ? "Sign in to plan your route or manage your restaurant."
+              : "Create an account to start ordering or managing menus."}
+          </Text>
 
           <View style={styles.toggleRow}>
             <Pressable
               style={[styles.toggleButton, mode === "login" && styles.toggleActive]}
               onPress={() => setMode("login")}
             >
-              <Text style={mode === "login" ? styles.toggleTextActive : styles.toggleText}>Login</Text>
+              <Text style={mode === "login" ? styles.toggleTextActive : styles.toggleText}>
+                Login
+              </Text>
             </Pressable>
             <Pressable
               style={[styles.toggleButton, mode === "register" && styles.toggleActive]}
               onPress={() => setMode("register")}
             >
-              <Text style={mode === "register" ? styles.toggleTextActive : styles.toggleText}>Register</Text>
+              <Text style={mode === "register" ? styles.toggleTextActive : styles.toggleText}>
+                Register
+              </Text>
             </Pressable>
           </View>
 
@@ -102,13 +117,17 @@ export const LoginScreen = () => {
                 style={[styles.toggleButton, role === "CUSTOMER" && styles.toggleActive]}
                 onPress={() => setRole("CUSTOMER")}
               >
-                <Text style={role === "CUSTOMER" ? styles.toggleTextActive : styles.toggleText}>Customer</Text>
+                <Text style={role === "CUSTOMER" ? styles.toggleTextActive : styles.toggleText}>
+                  Customer
+                </Text>
               </Pressable>
               <Pressable
                 style={[styles.toggleButton, role === "RESTAURANT" && styles.toggleActive]}
                 onPress={() => setRole("RESTAURANT")}
               >
-                <Text style={role === "RESTAURANT" ? styles.toggleTextActive : styles.toggleText}>Restaurant</Text>
+                <Text style={role === "RESTAURANT" ? styles.toggleTextActive : styles.toggleText}>
+                  Restaurant
+                </Text>
               </Pressable>
             </View>
           )}
@@ -155,12 +174,16 @@ export const LoginScreen = () => {
             style={({ pressed }) => [
               styles.primaryButton,
               !canSubmit && styles.disabledButton,
-              pressed && canSubmit ? styles.primaryButtonPressed : null
+              pressed && canSubmit ? styles.primaryButtonPressed : null,
             ]}
             disabled={!canSubmit}
             onPress={handleSubmit}
           >
-            {isSubmitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.primaryButtonText}>Continue</Text>}
+            {isSubmitting ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.primaryButtonText}>Continue</Text>
+            )}
           </Pressable>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -196,12 +219,12 @@ export const LoginScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#E0F2FE"
+    backgroundColor: "#E0F2FE",
   },
   container: {
     flex: 1,
     paddingHorizontal: 24,
-    justifyContent: "center"
+    justifyContent: "center",
   },
   card: {
     backgroundColor: "#FFFFFF",
@@ -211,24 +234,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 32,
     shadowOffset: { width: 0, height: 16 },
-    elevation: 8
+    elevation: 8,
   },
   title: {
     fontSize: 28,
     fontWeight: "700",
     color: "#0f172a",
-    marginBottom: 8
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 15,
     color: "#475569",
     marginBottom: 28,
-    lineHeight: 22
+    lineHeight: 22,
   },
   toggleRow: {
     flexDirection: "row",
     gap: 8,
-    marginBottom: 16
+    marginBottom: 16,
   },
   toggleButton: {
     flex: 1,
@@ -236,22 +259,22 @@ const styles = StyleSheet.create({
     borderColor: "#CBD5F5",
     borderRadius: 12,
     paddingVertical: 10,
-    alignItems: "center"
+    alignItems: "center",
   },
   toggleActive: {
     backgroundColor: "#2563EB",
-    borderColor: "#2563EB"
+    borderColor: "#2563EB",
   },
   toggleText: { color: "#0F172A", fontWeight: "600" },
   toggleTextActive: { color: "#FFF", fontWeight: "700" },
   formGroup: {
-    marginBottom: 18
+    marginBottom: 18,
   },
   label: {
     fontSize: 14,
     fontWeight: "600",
     color: "#0f172a",
-    marginBottom: 8
+    marginBottom: 8,
   },
   input: {
     borderRadius: 12,
@@ -261,7 +284,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: Platform.select({ ios: 16, android: 12 }),
     fontSize: 16,
-    color: "#0f172a"
+    color: "#0f172a",
   },
   primaryButton: {
     marginTop: 14,
@@ -269,18 +292,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#2563eb",
     paddingVertical: 16,
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
   },
   primaryButtonPressed: {
-    opacity: 0.85
+    opacity: 0.85,
   },
   primaryButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "600"
+    fontWeight: "600",
   },
   disabledButton: {
-    opacity: 0.6
+    opacity: 0.6,
   },
   error: {
     marginTop: 16,
@@ -290,23 +313,23 @@ const styles = StyleSheet.create({
     backgroundColor: "#FEF3C7",
     color: "#92400E",
     fontSize: 14,
-    lineHeight: 20
+    lineHeight: 20,
   },
   demoCallout: {
     marginTop: 24,
     padding: 18,
     borderRadius: 16,
-    backgroundColor: "#EFF6FF"
+    backgroundColor: "#EFF6FF",
   },
   demoTitle: {
     fontSize: 14,
     fontWeight: "700",
     color: "#1d4ed8",
-    marginBottom: 6
+    marginBottom: 6,
   },
   demoBody: {
     fontSize: 14,
     lineHeight: 20,
-    color: "#1e293b"
-  }
+    color: "#1e293b",
+  },
 });

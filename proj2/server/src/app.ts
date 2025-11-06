@@ -8,8 +8,8 @@ import { HttpError } from "./errors/HttpError";
 import { httpLogger, log } from "./logger";
 import { authRouter } from "./routes/auth";
 import { healthRouter } from "./routes/health";
-import { restaurantRouter } from "./routes/restaurants";
 import { ordersRouter } from "./routes/orders";
+import { restaurantRouter } from "./routes/restaurants";
 
 export const createApp = () => {
   const app = express();
@@ -17,8 +17,8 @@ export const createApp = () => {
   app.use(
     cors({
       origin: env.NODE_ENV === "production" ? [] : true,
-      credentials: true
-    })
+      credentials: true,
+    }),
   );
   app.use(helmet());
   app.use(httpLogger);
@@ -34,21 +34,14 @@ export const createApp = () => {
     res.status(404).json({ error: "Not found" });
   });
 
-  app.use(
-    (
-      err: Error,
-      _req: express.Request,
-      res: express.Response,
-      _next: express.NextFunction
-    ) => {
-      if (err instanceof HttpError) {
-        return res.status(err.status).json({ error: err.message });
-      }
-
-      log.error("Unhandled error", { message: err.message, stack: err.stack });
-      return res.status(500).json({ error: "Internal server error" });
+  app.use((err: Error, _req: express.Request, res: express.Response) => {
+    if (err instanceof HttpError) {
+      return res.status(err.status).json({ error: err.message });
     }
-  );
+
+    log.error("Unhandled error", { message: err.message, stack: err.stack });
+    return res.status(500).json({ error: "Internal server error" });
+  });
 
   return app;
 };

@@ -9,18 +9,17 @@ type RequestOptions = RequestInit & {
   requireAuth?: boolean;
 };
 
-export const apiFetch = async <T>(
-  path: string,
-  { headers, requireAuth = true, ...options }: RequestOptions = {}
-): Promise<T> => {
+export const apiFetch = async <T>(path: string, options: RequestOptions = {}): Promise<T> => {
+  const { headers, requireAuth = true, credentials, ...rest } = options;
+
   const response = await fetch(`${API_URL}${path}`, {
-    method: "GET",
-    credentials: "include",
+    method: rest.method ?? "GET",
+    credentials: credentials ?? (requireAuth ? "include" : "omit"),
     headers: {
       "Content-Type": "application/json",
-      ...headers
+      ...headers,
     },
-    ...options
+    ...rest,
   });
 
   if (!response.ok) {
@@ -39,18 +38,18 @@ export const apiPost = <T>(path: string, body?: unknown, options?: RequestOption
   apiFetch<T>(path, {
     ...options,
     method: "POST",
-    body: body ? JSON.stringify(body) : undefined
+    body: body ? JSON.stringify(body) : undefined,
   });
 
 export const apiPatch = <T>(path: string, body?: unknown, options?: RequestOptions) =>
   apiFetch<T>(path, {
     ...options,
     method: "PATCH",
-    body: body ? JSON.stringify(body) : undefined
+    body: body ? JSON.stringify(body) : undefined,
   });
 
 export const apiDelete = <T>(path: string, options?: RequestOptions) =>
   apiFetch<T>(path, {
     ...options,
-    method: "DELETE"
+    method: "DELETE",
   });

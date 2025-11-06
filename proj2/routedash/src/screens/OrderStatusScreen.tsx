@@ -25,7 +25,7 @@ const STATUS_MESSAGES: Record<OrderStatusValue, string> = {
   PREPARING: "Cooking your meal…",
   READY: "Packing and ready for pickup!",
   COMPLETED: "Order completed. Enjoy your meal!",
-  CANCELED: "The restaurant canceled this order."
+  CANCELED: "The restaurant canceled this order.",
 };
 
 const STATUS_LABELS: Record<OrderStatusValue, string> = {
@@ -33,7 +33,7 @@ const STATUS_LABELS: Record<OrderStatusValue, string> = {
   PREPARING: "Processing",
   READY: "Ready",
   COMPLETED: "Done",
-  CANCELED: "Canceled"
+  CANCELED: "Canceled",
 };
 
 const STATUS_PROGRESS: Record<OrderStatusValue, number> = {
@@ -41,7 +41,7 @@ const STATUS_PROGRESS: Record<OrderStatusValue, number> = {
   PREPARING: 1,
   READY: 2,
   COMPLETED: 2,
-  CANCELED: 0
+  CANCELED: 0,
 };
 
 const FINAL_STATUSES: OrderStatusValue[] = ["COMPLETED", "CANCELED"];
@@ -51,7 +51,7 @@ const STATUS_CHIP_KEYS = {
   PREPARING: "statusChipPREPARING",
   READY: "statusChipREADY",
   COMPLETED: "statusChipCOMPLETED",
-  CANCELED: "statusChipCANCELED"
+  CANCELED: "statusChipCANCELED",
 } as const;
 
 const formatCurrency = (cents: number) => `$${(cents / 100).toFixed(2)}`;
@@ -73,7 +73,9 @@ export const OrderStatusScreen = ({ route }: OrderStatusScreenProps) => {
 
     const fetchOrder = async () => {
       try {
-        const response = await apiFetch<ApiOrderResponse>(`/api/orders/${initialOrderRef.current.id}`);
+        const response = await apiFetch<ApiOrderResponse>(
+          `/api/orders/${initialOrderRef.current.id}`,
+        );
 
         if (!isMounted) {
           return;
@@ -88,7 +90,7 @@ export const OrderStatusScreen = ({ route }: OrderStatusScreenProps) => {
             ...next,
             restaurant: {
               ...fallback.restaurant,
-              ...next.restaurant
+              ...next.restaurant,
             },
             items: next.items.map((item) => ({
               ...item,
@@ -96,8 +98,8 @@ export const OrderStatusScreen = ({ route }: OrderStatusScreenProps) => {
                 item.name ??
                 item.menuItem?.name ??
                 fallback.items.find((existing) => existing.menuItemId === item.menuItemId)?.name ??
-                "Item"
-            }))
+                "Item",
+            })),
           };
         });
         setError(null);
@@ -113,7 +115,7 @@ export const OrderStatusScreen = ({ route }: OrderStatusScreenProps) => {
       }
     };
 
-    void fetchOrder();
+    fetchOrder().catch(() => {});
     pollId = setInterval(fetchOrder, 5000);
 
     return () => {
@@ -186,7 +188,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F8FAFC"
+    backgroundColor: "#F8FAFC",
   },
   header: { fontSize: 24, fontWeight: "700", marginBottom: 8 },
   sub: { fontSize: 16, color: "#475569", marginBottom: 4 },
@@ -197,19 +199,19 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     width: "85%",
     alignSelf: "center",
-    gap: 8
+    gap: 8,
   },
   statusHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center"
+    alignItems: "center",
   },
   status: { flex: 1, fontSize: 18, color: "#0F172A", fontWeight: "700" },
   statusStep: { color: "#475569", fontWeight: "600" },
   statusChip: {
     paddingVertical: 4,
     paddingHorizontal: 12,
-    borderRadius: 999
+    borderRadius: 999,
   },
   statusChipPENDING: { backgroundColor: "#DBEAFE" },
   statusChipPREPARING: { backgroundColor: "#FDE68A" },
@@ -225,28 +227,28 @@ const styles = StyleSheet.create({
     marginTop: 24,
     shadowColor: "#000",
     shadowOpacity: 0.05,
-    shadowRadius: 10
+    shadowRadius: 10,
   },
   sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 8 },
   itemRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 6
+    marginBottom: 6,
   },
   itemName: { color: "#0F172A" },
   itemPrice: { fontWeight: "600", color: "#2563EB" },
   divider: {
     height: 1,
     backgroundColor: "#E2E8F0",
-    marginVertical: 10
+    marginVertical: 10,
   },
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 6
+    marginBottom: 6,
   },
   summaryLabel: { color: "#475569" },
   summaryValue: { color: "#0F172A", fontWeight: "600" },
   summaryTotalRow: { marginTop: 6 },
-  summaryTotal: { fontWeight: "700", color: "#0F172A" }
+  summaryTotal: { fontWeight: "700", color: "#0F172A" },
 });

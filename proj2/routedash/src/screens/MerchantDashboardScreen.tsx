@@ -1,5 +1,14 @@
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 import { apiDelete, apiFetch, apiPatch, apiPost } from "../api/client";
 import { useAuth } from "../context/AuthContext";
@@ -30,7 +39,7 @@ const STATUS_LABELS: Record<OrderStatusValue, string> = {
   PREPARING: "Processing",
   READY: "Ready",
   COMPLETED: "Done",
-  CANCELED: "Canceled"
+  CANCELED: "Canceled",
 };
 
 const ORDER_ACTIONS: Partial<
@@ -45,16 +54,16 @@ const ORDER_ACTIONS: Partial<
 > = {
   PENDING: [
     { label: "Start Processing", target: "PREPARING", tone: "primary" },
-    { label: "Cancel Order", target: "CANCELED", tone: "danger" }
+    { label: "Cancel Order", target: "CANCELED", tone: "danger" },
   ],
   PREPARING: [
     { label: "Mark Ready", target: "READY", tone: "primary" },
-    { label: "Cancel Order", target: "CANCELED", tone: "danger" }
+    { label: "Cancel Order", target: "CANCELED", tone: "danger" },
   ],
   READY: [
     { label: "Mark Done", target: "COMPLETED", tone: "primary" },
-    { label: "Cancel Order", target: "CANCELED", tone: "danger" }
-  ]
+    { label: "Cancel Order", target: "CANCELED", tone: "danger" },
+  ],
 };
 
 export const MerchantDashboardScreen = () => {
@@ -73,12 +82,16 @@ export const MerchantDashboardScreen = () => {
 
   const restaurantId = user?.restaurantId;
 
-  const loadMenu = async () => {
-    if (!restaurantId) return;
+  const loadMenu = useCallback(async () => {
+    if (!restaurantId) {
+      return;
+    }
     try {
       setMenuError(null);
       setIsMenuLoading(true);
-      const response = await apiFetch<{ sections: MenuSection[] }>(`/api/restaurants/${restaurantId}/menu`);
+      const response = await apiFetch<{ sections: MenuSection[] }>(
+        `/api/restaurants/${restaurantId}/menu`,
+      );
       setSections(response.sections);
       if (response.sections.length) {
         setItemSectionId(response.sections[0].id);
@@ -88,32 +101,43 @@ export const MerchantDashboardScreen = () => {
     } finally {
       setIsMenuLoading(false);
     }
-  };
+  }, [restaurantId]);
 
-  const loadOrders = async () => {
-    if (!restaurantId) return;
+  const loadOrders = useCallback(async () => {
+    if (!restaurantId) {
+      return;
+    }
     try {
       setOrdersError(null);
       setIsOrdersLoading(true);
-      const response = await apiFetch<{ orders: RestaurantOrder[] }>(`/api/restaurants/${restaurantId}/orders`);
+      const response = await apiFetch<{ orders: RestaurantOrder[] }>(
+        `/api/restaurants/${restaurantId}/orders`,
+      );
       setOrders(response.orders);
     } catch (err) {
       setOrdersError((err as Error).message);
     } finally {
       setIsOrdersLoading(false);
     }
-  };
-
-  useEffect(() => {
-    void loadMenu();
-    void loadOrders();
   }, [restaurantId]);
 
+  useEffect(() => {
+    if (!restaurantId) {
+      return;
+    }
+    loadMenu().catch(() => {});
+    loadOrders().catch(() => {});
+  }, [loadMenu, loadOrders, restaurantId]);
+
   const handleAddSection = async () => {
-    if (!restaurantId || !sectionTitle.trim()) return;
+    if (!restaurantId || !sectionTitle.trim()) {
+      return;
+    }
     try {
       setMenuError(null);
-      await apiPost(`/api/restaurants/${restaurantId}/menu/sections`, { title: sectionTitle.trim() });
+      await apiPost(`/api/restaurants/${restaurantId}/menu/sections`, {
+        title: sectionTitle.trim(),
+      });
       setSectionTitle("");
       await loadMenu();
     } catch (err) {
@@ -122,13 +146,15 @@ export const MerchantDashboardScreen = () => {
   };
 
   const handleAddItem = async () => {
-    if (!restaurantId || !itemName.trim()) return;
+    if (!restaurantId || !itemName.trim()) {
+      return;
+    }
     try {
       setMenuError(null);
       await apiPost(`/api/restaurants/${restaurantId}/menu/items`, {
         sectionId: itemSectionId ?? null,
         name: itemName.trim(),
-        priceCents: Math.round(parseFloat(itemPrice) * 100)
+        priceCents: Math.round(parseFloat(itemPrice) * 100),
       });
       setItemName("");
       await loadMenu();
@@ -138,10 +164,14 @@ export const MerchantDashboardScreen = () => {
   };
 
   const toggleAvailability = async (itemId: string, isAvailable: boolean) => {
-    if (!restaurantId) return;
+    if (!restaurantId) {
+      return;
+    }
     try {
       setMenuError(null);
-      await apiPatch(`/api/restaurants/${restaurantId}/menu/items/${itemId}`, { isAvailable: !isAvailable });
+      await apiPatch(`/api/restaurants/${restaurantId}/menu/items/${itemId}`, {
+        isAvailable: !isAvailable,
+      });
       await loadMenu();
     } catch (err) {
       setMenuError((err as Error).message);
@@ -149,7 +179,9 @@ export const MerchantDashboardScreen = () => {
   };
 
   const removeItem = async (itemId: string) => {
-    if (!restaurantId) return;
+    if (!restaurantId) {
+      return;
+    }
     try {
       setMenuError(null);
       await apiDelete(`/api/restaurants/${restaurantId}/menu/items/${itemId}`);
@@ -160,10 +192,14 @@ export const MerchantDashboardScreen = () => {
   };
 
   const handleOrderStatusChange = async (orderId: string, nextStatus: OrderStatusValue) => {
-    if (!restaurantId) return;
+    if (!restaurantId) {
+      return;
+    }
     try {
       setOrdersError(null);
-      await apiPatch(`/api/restaurants/${restaurantId}/orders/${orderId}`, { status: nextStatus });
+      await apiPatch(`/api/restaurants/${restaurantId}/orders/${orderId}`, {
+        status: nextStatus,
+      });
       await loadOrders();
     } catch (err) {
       setOrdersError((err as Error).message);
@@ -173,9 +209,9 @@ export const MerchantDashboardScreen = () => {
   const switchTab = (tab: "orders" | "menu") => {
     setActiveTab(tab);
     if (tab === "orders") {
-      void loadOrders();
+      loadOrders().catch(() => {});
     } else {
-      void loadMenu();
+      loadMenu().catch(() => {});
     }
   };
 
@@ -200,13 +236,19 @@ export const MerchantDashboardScreen = () => {
           onPress={() => switchTab("orders")}
           style={[styles.tabButton, activeTab === "orders" && styles.tabButtonActive]}
         >
-          <Text style={[styles.tabButtonText, activeTab === "orders" && styles.tabButtonTextActive]}>Orders</Text>
+          <Text
+            style={[styles.tabButtonText, activeTab === "orders" && styles.tabButtonTextActive]}
+          >
+            Orders
+          </Text>
         </Pressable>
         <Pressable
           onPress={() => switchTab("menu")}
           style={[styles.tabButton, activeTab === "menu" && styles.tabButtonActive]}
         >
-          <Text style={[styles.tabButtonText, activeTab === "menu" && styles.tabButtonTextActive]}>Menu</Text>
+          <Text style={[styles.tabButtonText, activeTab === "menu" && styles.tabButtonTextActive]}>
+            Menu
+          </Text>
         </Pressable>
       </View>
 
@@ -214,7 +256,9 @@ export const MerchantDashboardScreen = () => {
         <>
           {ordersError ? <Text style={styles.error}>{ordersError}</Text> : null}
           {isOrdersLoading ? <ActivityIndicator color="#2563EB" /> : null}
-          {!isOrdersLoading && orders.length === 0 ? <Text style={styles.meta}>No orders yet</Text> : null}
+          {!isOrdersLoading && orders.length === 0 ? (
+            <Text style={styles.meta}>No orders yet</Text>
+          ) : null}
           {orders.map((order) => {
             const actions = ORDER_ACTIONS[order.status] ?? [];
             const createdLabel = new Date(order.createdAt).toLocaleString();
@@ -249,14 +293,18 @@ export const MerchantDashboardScreen = () => {
                         key={action.target}
                         style={[
                           styles.orderActionBtn,
-                          action.tone === "danger" ? styles.orderActionBtnDanger : styles.orderActionBtnPrimary
+                          action.tone === "danger"
+                            ? styles.orderActionBtnDanger
+                            : styles.orderActionBtnPrimary,
                         ]}
                         onPress={() => handleOrderStatusChange(order.id, action.target)}
                       >
                         <Text
                           style={[
                             styles.orderActionText,
-                            action.tone === "danger" ? styles.orderActionTextDanger : styles.orderActionTextPrimary
+                            action.tone === "danger"
+                              ? styles.orderActionTextDanger
+                              : styles.orderActionTextPrimary,
                           ]}
                         >
                           {action.label}
@@ -312,15 +360,17 @@ export const MerchantDashboardScreen = () => {
                   style={[styles.pill, itemSectionId === item.id && styles.pillActive]}
                   onPress={() => setItemSectionId(item.id)}
                 >
-                  <Text style={itemSectionId === item.id ? styles.pillTextActive : styles.pillText}>{item.title}</Text>
+                  <Text style={itemSectionId === item.id ? styles.pillTextActive : styles.pillText}>
+                    {item.title}
+                  </Text>
                 </Pressable>
               )}
               ListEmptyComponent={<Text style={styles.meta}>No sections yet</Text>}
             />
-        <Pressable style={[styles.primaryBtn, styles.addItemBtn]} onPress={handleAddItem}>
-          <Text style={styles.primaryBtnText}>Add Item</Text>
-        </Pressable>
-      </View>
+            <Pressable style={[styles.primaryBtn, styles.addItemBtn]} onPress={handleAddItem}>
+              <Text style={styles.primaryBtnText}>Add Item</Text>
+            </Pressable>
+          </View>
 
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Menu</Text>
@@ -338,7 +388,9 @@ export const MerchantDashboardScreen = () => {
                         style={styles.secondaryBtn}
                         onPress={() => toggleAvailability(item.id, item.isAvailable)}
                       >
-                        <Text style={styles.secondaryText}>{item.isAvailable ? "Disable" : "Enable"}</Text>
+                        <Text style={styles.secondaryText}>
+                          {item.isAvailable ? "Disable" : "Enable"}
+                        </Text>
                       </Pressable>
                       <Pressable style={styles.deleteBtn} onPress={() => removeItem(item.id)}>
                         <Text style={styles.deleteText}>Delete</Text>
@@ -360,13 +412,13 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 16,
     backgroundColor: "#F8FAFC",
-    flexGrow: 1
+    flexGrow: 1,
   },
   centered: { flex: 1, alignItems: "center", justifyContent: "center" },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center"
+    alignItems: "center",
   },
   header: { fontSize: 24, fontWeight: "700" },
   error: { color: "#B91C1C" },
@@ -374,20 +426,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: "#E2E8F0",
     borderRadius: 14,
-    padding: 4
+    padding: 4,
   },
   tabButton: {
     flex: 1,
     alignItems: "center",
     paddingVertical: 10,
-    borderRadius: 10
+    borderRadius: 10,
   },
   tabButtonActive: {
     backgroundColor: "#FFF",
     shadowColor: "#000000",
     shadowOpacity: 0.05,
     shadowRadius: 6,
-    elevation: 2
+    elevation: 2,
   },
   tabButtonText: { fontWeight: "600", color: "#475569" },
   tabButtonTextActive: { color: "#0F172A" },
@@ -397,7 +449,7 @@ const styles = StyleSheet.create({
     padding: 16,
     shadowColor: "#000",
     shadowOpacity: 0.05,
-    shadowRadius: 10
+    shadowRadius: 10,
   },
   sectionTitle: { fontSize: 18, fontWeight: "700", marginBottom: 12 },
   input: {
@@ -405,24 +457,24 @@ const styles = StyleSheet.create({
     borderColor: "#CBD5F5",
     borderRadius: 10,
     padding: 12,
-    marginBottom: 12
+    marginBottom: 12,
   },
   label: { fontWeight: "600", marginBottom: 6 },
   primaryBtn: {
     backgroundColor: "#2563EB",
     paddingVertical: 12,
     borderRadius: 10,
-    alignItems: "center"
+    alignItems: "center",
   },
   addItemBtn: {
-    marginTop: 12
+    marginTop: 12,
   },
   primaryBtnText: { color: "#FFF", fontWeight: "700" },
   logoutBtn: {
     paddingHorizontal: 16,
     paddingVertical: 10,
     backgroundColor: "#E2E8F0",
-    borderRadius: 12
+    borderRadius: 12,
   },
   logoutText: { fontWeight: "600", color: "#0F172A" },
   meta: { color: "#475569" },
@@ -430,14 +482,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8
+    marginBottom: 8,
   },
   orderTitle: { fontSize: 18, fontWeight: "700" },
   statusChip: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: "#E2E8F0"
+    backgroundColor: "#E2E8F0",
   },
   statusChipPENDING: { backgroundColor: "#E0F2FE" },
   statusChipPREPARING: { backgroundColor: "#FDE68A" },
@@ -448,7 +500,7 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: "#E2E8F0",
-    marginVertical: 12
+    marginVertical: 12,
   },
   orderItems: { gap: 4 },
   orderItemText: { color: "#1F2937" },
@@ -456,12 +508,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    marginTop: 12
+    marginTop: 12,
   },
   orderActionBtn: {
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 8
+    borderRadius: 8,
   },
   orderActionBtnPrimary: { backgroundColor: "#2563EB" },
   orderActionBtnDanger: { backgroundColor: "#FEE2E2" },
@@ -474,7 +526,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    marginRight: 8
+    marginRight: 8,
   },
   pillActive: { backgroundColor: "#2563EB", borderColor: "#2563EB" },
   pillText: { color: "#0F172A" },
@@ -485,7 +537,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8
+    marginBottom: 8,
   },
   itemName: { fontWeight: "600" },
   itemActions: { flexDirection: "row", gap: 8 },
@@ -493,14 +545,14 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 8,
-    backgroundColor: "#E0F2FE"
+    backgroundColor: "#E0F2FE",
   },
   secondaryText: { color: "#0369A1", fontWeight: "600" },
   deleteBtn: {
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 8,
-    backgroundColor: "#FEE2E2"
+    backgroundColor: "#FEE2E2",
   },
-  deleteText: { color: "#B91C1C", fontWeight: "600" }
+  deleteText: { color: "#B91C1C", fontWeight: "600" },
 });

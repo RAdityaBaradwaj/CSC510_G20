@@ -2,7 +2,7 @@ module.exports = {
   root: true,
   parser: "@typescript-eslint/parser",
   parserOptions: {
-    project: "./tsconfig.json"
+    project: "./tsconfig.eslint.json"
   },
   env: {
     node: true,
@@ -18,5 +18,13 @@ module.exports = {
         alphabetize: { order: "asc", caseInsensitive: true }
       }
     ]
-  }
+  },
+  overrides: [
+    {
+      files: ["src/__tests__/**/*.ts", "src/__tests__/**/*.tsx"],
+      rules: {
+        "@typescript-eslint/no-explicit-any": "off"
+      }
+    }
+  ]
 };

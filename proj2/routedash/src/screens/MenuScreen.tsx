@@ -34,7 +34,7 @@ export const MenuScreen = ({ route, navigation }: MenuScreenProps) => {
       try {
         setIsLoading(true);
         const response = await apiFetch<MenuResponse>(`/api/restaurants/${restaurant.id}/menu`, {
-          requireAuth: false
+          requireAuth: false,
         });
         const normalized: MenuSection[] = response.sections.map((section) => ({
           id: section.id,
@@ -47,8 +47,8 @@ export const MenuScreen = ({ route, navigation }: MenuScreenProps) => {
               description: item.description,
               priceCents: item.priceCents,
               isAvailable: item.isAvailable,
-              tags: item.tags
-            }))
+              tags: item.tags,
+            })),
         }));
         setSections(normalized);
       } catch (err) {
@@ -58,23 +58,28 @@ export const MenuScreen = ({ route, navigation }: MenuScreenProps) => {
       }
     };
 
-    void loadMenu();
+    loadMenu().catch(() => {});
   }, [restaurant.id]);
 
-  const itemCount = useMemo(
-    () => cart.reduce((sum, entry) => sum + entry.quantity, 0),
-    [cart]
-  );
+  const itemCount = useMemo(() => cart.reduce((sum, entry) => sum + entry.quantity, 0), [cart]);
 
   const addToCart = (item: MenuItem) => {
     setCart((prev) => {
       const existing = prev.find((entry) => entry.menuItemId === item.id);
       if (existing) {
         return prev.map((entry) =>
-          entry.menuItemId === item.id ? { ...entry, quantity: entry.quantity + 1 } : entry
+          entry.menuItemId === item.id ? { ...entry, quantity: entry.quantity + 1 } : entry,
         );
       }
-      return [...prev, { menuItemId: item.id, name: item.name, priceCents: item.priceCents, quantity: 1 }];
+      return [
+        ...prev,
+        {
+          menuItemId: item.id,
+          name: item.name,
+          priceCents: item.priceCents,
+          quantity: 1,
+        },
+      ];
     });
   };
 
@@ -126,12 +131,12 @@ const styles = StyleSheet.create({
   error: { color: "#B91C1C", marginBottom: 12 },
   listContent: { paddingBottom: 120 },
   section: {
-    marginBottom: 16
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
-    marginBottom: 8
+    marginBottom: 8,
   },
   card: {
     backgroundColor: "#FFF",
@@ -140,7 +145,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     shadowColor: "#000",
     shadowOpacity: 0.05,
-    shadowRadius: 10
+    shadowRadius: 10,
   },
   name: { fontSize: 18, fontWeight: "700" },
   desc: { color: "#475569", marginTop: 4 },
@@ -150,7 +155,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 8,
     marginTop: 8,
-    alignItems: "center"
+    alignItems: "center",
   },
   addText: { color: "#FFF", fontWeight: "600" },
   checkoutBtn: {
@@ -158,7 +163,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 10,
     alignItems: "center",
-    marginTop: 12
+    marginTop: 12,
   },
-  checkoutText: { color: "#FFF", fontWeight: "700" }
+  checkoutText: { color: "#FFF", fontWeight: "700" },
 });
