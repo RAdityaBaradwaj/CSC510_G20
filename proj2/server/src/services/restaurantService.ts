@@ -4,8 +4,13 @@ import { HttpError } from "../errors/HttpError";
 import { prisma } from "../lib/prisma";
 import { log } from "../logger";
 
-type SectionInput = {
+type SectionCreateInput = {
   title: string;
+  position?: number;
+};
+
+type SectionUpdateInput = {
+  title?: string;
   position?: number;
 };
 
@@ -82,7 +87,7 @@ export const getRestaurantMenu = async (restaurantId: string) => {
   };
 };
 
-export const createMenuSection = (restaurantId: string, input: SectionInput) =>
+export const createMenuSection = (restaurantId: string, input: SectionCreateInput) =>
   prisma.menuSection.create({
     data: {
       restaurantId,
@@ -91,7 +96,11 @@ export const createMenuSection = (restaurantId: string, input: SectionInput) =>
     }
   });
 
-export const updateMenuSection = async (restaurantId: string, sectionId: string, input: SectionInput) => {
+export const updateMenuSection = async (
+  restaurantId: string,
+  sectionId: string,
+  input: SectionUpdateInput
+) => {
   const section = await prisma.menuSection.findUnique({
     where: { id: sectionId, restaurantId }
   });
