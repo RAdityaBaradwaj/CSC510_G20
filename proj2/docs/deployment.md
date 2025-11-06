@@ -13,7 +13,22 @@ This document outlines how to deploy the RouteDash stack in staging/production e
 
 ---
 
-## 2. Environment variables
+## 2. Grab the latest prebuilt artefacts
+
+Every tagged release (`v0.x`) publishes the following assets under [GitHub Releases](https://github.com/RAdityaBaradwaj/CSC510_G20/releases):
+
+| File | Description |
+|------|-------------|
+| `routedash-backend.tar.gz` | Compiled TypeScript API (`dist/`) + production `.env.example`. Extract and run `npm ci && npm run start`. |
+| `routedash-backend.docker.tar` | Docker image (built from `Dockerfile`) ready for `docker load`. |
+| `routedash-mobile.apk` | Expo EAS build for Android (arm64 + x86). |
+| `routedash-mobile.ipa` | iOS TestFlight build (upload with Transporter). |
+
+> ⚠️ If you need the latest development snapshot before the next tagged release, follow the build steps below.
+
+---
+
+## 3. Environment variables
 
 | Variable | Description | Example |
 |----------|-------------|---------|
@@ -24,7 +39,7 @@ This document outlines how to deploy the RouteDash stack in staging/production e
 
 ---
 
-## 3. Docker deployment
+## 4. Docker deployment
 
 1. **Build images**
 
@@ -61,7 +76,7 @@ This document outlines how to deploy the RouteDash stack in staging/production e
 
 ---
 
-## 4. Fly.io one-click deploy
+## 5. Fly.io one-click deploy
 
 1. Install the Fly CLI: `curl -L https://fly.io/install.sh | sh`
 2. From `proj2/server`, run `flyctl launch` (do not deploy yet).
@@ -77,7 +92,7 @@ Fly automatically provisions an SSL-enabled hostname. Remember to update the Exp
 
 ---
 
-## 5. Expo builds
+## 6. Expo builds
 
 1. Install Expo CLI globally `npm install -g expo-cli` (optional).
 2. Authenticate: `npx expo login`.
@@ -96,7 +111,7 @@ Fly automatically provisions an SSL-enabled hostname. Remember to update the Exp
 
 ---
 
-## 6. Observability
+## 7. Observability
 
 - **Logs**: Use services like Fly.io logs, Render logs, or connect to Datadog.
 - **Metrics**: TODO — integrate OpenTelemetry with Prometheus exporter.
@@ -104,7 +119,7 @@ Fly automatically provisions an SSL-enabled hostname. Remember to update the Exp
 
 ---
 
-## 7. Rollback strategy
+## 8. Rollback strategy
 
 - Maintain database backups (daily snapshots).
 - Deploy using blue/green or canary strategy when possible.
@@ -112,7 +127,7 @@ Fly automatically provisions an SSL-enabled hostname. Remember to update the Exp
 
 ---
 
-## 8. Post-deployment checklist
+## 9. Post-deployment checklist
 
 - [ ] Migrations applied successfully.
 - [ ] Health endpoint returns `200 OK`.
