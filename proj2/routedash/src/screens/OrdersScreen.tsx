@@ -26,7 +26,14 @@ type OrdersResponse = {
   >;
 };
 
-type OrderListItem = OrderSummary & { createdAt?: string };
+type OrderItem = OrderSummary["items"][number] & {
+  name: string;
+};
+
+type OrderListItem = Omit<OrderSummary, "items"> & {
+  items: OrderItem[];
+  createdAt?: string;
+};
 
 const STATUS_LABELS: Record<OrderStatusValue, string> = {
   PENDING: "Pending",
@@ -57,16 +64,24 @@ export const OrdersScreen = ({ navigation }: OrdersScreenProps) => {
     try {
       setError(null);
       const response = await apiFetch<OrdersResponse>("/api/orders");
-      const normalized = response.orders.map((order) => ({
-        ...order,
-        items: order.items.map((item) => ({
-          id: item.id,
-          menuItemId: item.menuItemId,
-          quantity: item.quantity,
-          priceCents: item.priceCents,
-          name: item.menuItem?.name ?? item.name ?? "Item",
-        })),
-      }));
+      const normalized: OrderListItem[] = response.orders.map(
+        (order: OrdersResponse["orders"][number]) => {
+          const items: OrderItem[] = order.items.map(
+            (orderItem: OrdersResponse["orders"][number]["items"][number]) => ({
+              id: orderItem.id,
+              menuItemId: orderItem.menuItemId,
+              quantity: orderItem.quantity,
+              priceCents: orderItem.priceCents,
+              name: orderItem.menuItem?.name ?? orderItem.name ?? "Item",
+            }),
+          );
+
+          return {
+            ...order,
+            items,
+          };
+        },
+      );
       setOrders(normalized);
     } catch (err) {
       setError((err as Error).message);

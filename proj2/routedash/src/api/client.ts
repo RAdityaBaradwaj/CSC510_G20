@@ -5,20 +5,21 @@ const API_URL =
   (Constants?.manifest?.extra as { apiUrl?: string } | undefined)?.apiUrl ??
   "http://localhost:4000";
 
-type RequestOptions = RequestInit & {};
+type RequestOptions = RequestInit & {
+  requireAuth?: boolean;
+};
 
-export const apiFetch = async <T>(
-  path: string,
-  { headers, ...options }: RequestOptions = {},
-): Promise<T> => {
+export const apiFetch = async <T>(path: string, options: RequestOptions = {}): Promise<T> => {
+  const { headers, requireAuth = true, credentials, ...rest } = options;
+
   const response = await fetch(`${API_URL}${path}`, {
-    method: "GET",
-    credentials: "include",
+    method: rest.method ?? "GET",
+    credentials: credentials ?? (requireAuth ? "include" : "omit"),
     headers: {
       "Content-Type": "application/json",
       ...headers,
     },
-    ...options,
+    ...rest,
   });
 
   if (!response.ok) {

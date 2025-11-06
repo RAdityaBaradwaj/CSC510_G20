@@ -1,9 +1,11 @@
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
+import type { TextStyle } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { LogoutButton } from "./src/components/LogoutButton";
@@ -29,10 +31,17 @@ const AppTheme = {
   },
 };
 
-const logoutHeaderOptions = {
+type HeaderTitleTextStyle = Pick<TextStyle, "fontWeight" | "fontSize" | "fontFamily"> & {
+  color?: string;
+};
+
+const headerTitleStyle: HeaderTitleTextStyle = {
+  fontWeight: "600" as TextStyle["fontWeight"],
+};
+
+const logoutHeaderOptions: NativeStackNavigationOptions = {
   headerRight: () => <LogoutButton />,
-  headerRightContainerStyle: { paddingRight: 12 },
-  headerTitleStyle: { fontWeight: "600" },
+  headerTitleStyle,
 };
 
 const TripStack = createNativeStackNavigator<RootStackParamList>();

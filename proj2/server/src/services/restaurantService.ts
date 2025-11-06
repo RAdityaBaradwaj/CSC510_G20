@@ -1,4 +1,5 @@
-import { MenuItemAction, Prisma } from "@prisma/client";
+import type { MenuItem } from "@prisma/client";
+import { MenuItemAction } from "@prisma/client";
 
 import { HttpError } from "../errors/HttpError";
 import { prisma } from "../lib/prisma";
@@ -140,8 +141,8 @@ const logMenuChange = async ({
   menuItemId: string;
   userId: string;
   action: MenuItemAction;
-  before?: Prisma.MenuItem | null;
-  after?: Prisma.MenuItem | null;
+  before?: MenuItem | null;
+  after?: MenuItem | null;
 }) => {
   await prisma.menuItemChangeLog.create({
     data: {
