@@ -16,6 +16,25 @@ type CreateOrderInput = {
   routeDestination: string;
 };
 
+const TAX_RATE = 0.0825;
+
+const calculateSubtotal = (items: Array<{ priceCents: number; quantity: number }>) =>
+  items.reduce((total, item) => total + item.priceCents * item.quantity, 0);
+
+const attachFinancials = <T extends { totalCents: number; items: Array<{ priceCents: number; quantity: number }> }>(
+  order: T,
+  overrides?: { subtotalCents: number; taxCents: number },
+) => {
+  const subtotalCents = overrides?.subtotalCents ?? calculateSubtotal(order.items);
+  const taxCents = overrides?.taxCents ?? Math.max(order.totalCents - subtotalCents, 0);
+
+  return {
+    ...order,
+    subtotalCents,
+    taxCents,
+  };
+};
+
 export const createOrder = async (customerId: string, input: CreateOrderInput) => {
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: input.restaurantId, isActive: true },
@@ -36,10 +55,12 @@ export const createOrder = async (customerId: string, input: CreateOrderInput) =
     throw new HttpError(400, "Some menu items are unavailable");
   }
 
-  const totalCents = input.items.reduce((total, item) => {
+  const subtotalCents = input.items.reduce((total, item) => {
     const menuItem = menuItems.find((i) => i.id === item.menuItemId)!;
     return total + menuItem.priceCents * item.quantity;
   }, 0);
+  const taxCents = Math.round(subtotalCents * TAX_RATE);
+  const totalCents = subtotalCents + taxCents;
 
   const order = await prisma.order.create({
     data: {
@@ -68,7 +89,7 @@ export const createOrder = async (customerId: string, input: CreateOrderInput) =
     },
   });
 
-  return order;
+  return attachFinancials(order, { subtotalCents, taxCents });
 };
 
 const customerOrderInclude = {
@@ -84,12 +105,15 @@ const customerOrderInclude = {
   },
 } as const;
 
-export const listOrdersForUser = (customerId: string) =>
-  prisma.order.findMany({
+export const listOrdersForUser = async (customerId: string) => {
+  const orders = await prisma.order.findMany({
     where: { customerId },
     include: customerOrderInclude,
     orderBy: { createdAt: "desc" },
   });
+
+  return orders.map((order) => attachFinancials(order));
+};
 
 const restaurantOrderInclude = {
   customer: {
@@ -104,12 +128,15 @@ const restaurantOrderInclude = {
   },
 } as const;
 
-export const listOrdersForRestaurant = (restaurantId: string) =>
-  prisma.order.findMany({
+export const listOrdersForRestaurant = async (restaurantId: string) => {
+  const orders = await prisma.order.findMany({
     where: { restaurantId },
     include: restaurantOrderInclude,
     orderBy: [{ status: "asc" }, { createdAt: "asc" }],
   });
+
+  return orders.map((order) => attachFinancials(order));
+};
 
 const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   [OrderStatus.PENDING]: [OrderStatus.PREPARING, OrderStatus.CANCELED],
@@ -134,7 +161,7 @@ export const updateOrderStatusForRestaurant = async (
   }
 
   if (order.status === nextStatus) {
-    return order;
+    return attachFinancials(order);
   }
 
   const allowedTransitions = STATUS_TRANSITIONS[order.status] ?? [];
@@ -148,7 +175,7 @@ export const updateOrderStatusForRestaurant = async (
     include: restaurantOrderInclude,
   });
 
-  return updated;
+  return attachFinancials(updated);
 };
 
 export const getOrderForCustomer = async (orderId: string, customerId: string) => {
@@ -161,5 +188,5 @@ export const getOrderForCustomer = async (orderId: string, customerId: string) =
     throw new HttpError(404, "Order not found");
   }
 
-  return order;
+  return attachFinancials(order);
 };
