@@ -67,9 +67,14 @@ Detailed instructions live in [INSTALL.md](INSTALL.md). If you are setting up a 
 - [API reference & data contracts](proj2/docs/api.md)
 - [Sustainability self-assessment](proj2/docs/sustainability-evaluation.md)
 - [Repository health rubric](proj2/docs/repository-rubric.md)
+- [Dependency catalog](proj2/docs/dependencies.md)
+- [Accessibility checklist](proj2/docs/accessibility.md)
+- [Governance & roadmap](proj2/docs/governance.md)
+- [Community & outreach plan](proj2/docs/community.md)
 - [Contribution guidelines](CONTRIBUTING.md)
 - [Code of conduct](CODE_OF_CONDUCT.md)
 - [License](LICENSE.md)
+- [Changelog](CHANGELOG.md)
 
 ## Testing & Coverage
 
@@ -92,10 +97,16 @@ Detailed instructions live in [INSTALL.md](INSTALL.md). If you are setting up a 
 - **Communication:** Daily syncs in the private Discord (QR code in [proj2/docs/poster.pdf](proj2/docs/poster.pdf)), with weekly summaries mirrored to the issue tracker.
 - **Release cadence:** Tagged releases (`v0.x`) every Friday aggregate the week’s completed stories.
 
+## Releases & Roadmap
+
+- `CHANGELOG.md` captures every tagged release and the planned next steps.
+- Prebuilt artefacts (Docker image, backend tarball, Expo builds) accompany each release on GitHub and are referenced in [proj2/docs/deployment.md](proj2/docs/deployment.md).
+- Governance, funding updates, and the 3/6/12 month roadmap are documented in [proj2/docs/governance.md](proj2/docs/governance.md).
+
 ## Acknowledgements
 
 Built by CSC510 Group 20 — Sanjana Chandrashekar, [teammates list](proj2/docs/team.md). Special thanks to the CSC510 teaching staff for guidance.
 
 ---
 
-For questions, open an issue or email `team@routedash.dev` (goes to the full team). For security disclosures, follow the steps in [SECURITY.md](SECURITY.md).
+For questions, open an issue or email `team@routedash.dev` (goes to the full team). For security disclosures, follow the steps in [SECURITY.md](SECURITY.md). Release notes live in [CHANGELOG.md](CHANGELOG.md); weekly tags (`v0.x`) summarise merged pull requests and updated Expo builds.
