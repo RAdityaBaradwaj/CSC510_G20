@@ -1,5 +1,5 @@
-import { OrderStatus, PrismaClient, UserRole } from "@prisma/client";
-import bcrypt from "bcryptjs";
+import { OrderStatus, PrismaClient, UserRole } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -14,33 +14,33 @@ async function main() {
   await prisma.restaurant.deleteMany();
   await prisma.user.deleteMany();
 
-  const password = await hash("password123!");
+  const password = await hash('password123!');
 
   const customer = await prisma.user.create({
     data: {
-      name: "Casey Customer",
-      email: "customer@example.com",
+      name: 'Casey Customer',
+      email: 'customer@example.com',
       role: UserRole.CUSTOMER,
-      passwordHash: password
-    }
+      passwordHash: password,
+    },
   });
 
   const merchantOne = await prisma.user.create({
     data: {
-      name: "Riley Diner",
-      email: "merchant1@example.com",
+      name: 'Riley Diner',
+      email: 'merchant1@example.com',
       role: UserRole.RESTAURANT,
-      passwordHash: password
-    }
+      passwordHash: password,
+    },
   });
 
   const merchantTwo = await prisma.user.create({
     data: {
-      name: "Taylor Bistro",
-      email: "merchant2@example.com",
+      name: 'Taylor Bistro',
+      email: 'merchant2@example.com',
       role: UserRole.RESTAURANT,
-      passwordHash: password
-    }
+      passwordHash: password,
+    },
   });
 
   const createRestaurant = async (
@@ -48,7 +48,7 @@ async function main() {
     name: string,
     address: string,
     latitude: number,
-    longitude: number
+    longitude: number,
   ) => {
     const restaurant = await prisma.restaurant.create({
       data: {
@@ -56,24 +56,24 @@ async function main() {
         name,
         address,
         latitude,
-        longitude
-      }
+        longitude,
+      },
     });
 
     const breakfast = await prisma.menuSection.create({
       data: {
         restaurantId: restaurant.id,
-        title: "Breakfast",
-        position: 0
-      }
+        title: 'Breakfast',
+        position: 0,
+      },
     });
 
     const lunch = await prisma.menuSection.create({
       data: {
         restaurantId: restaurant.id,
-        title: "Lunch",
-        position: 1
-      }
+        title: 'Lunch',
+        position: 1,
+      },
     });
 
     await prisma.menuItem.createMany({
@@ -81,50 +81,50 @@ async function main() {
         {
           restaurantId: restaurant.id,
           sectionId: breakfast.id,
-          name: "Sunrise Burrito",
-          description: "Egg, cheese, potatoes, and salsa wrap.",
+          name: 'Sunrise Burrito',
+          description: 'Egg, cheese, potatoes, and salsa wrap.',
           priceCents: 899,
-          tags: ["vegetarian"]
+          tags: ['vegetarian'],
         },
         {
           restaurantId: restaurant.id,
           sectionId: breakfast.id,
-          name: "Blueberry Pancakes",
-          description: "Stack of fluffy pancakes with maple syrup.",
+          name: 'Blueberry Pancakes',
+          description: 'Stack of fluffy pancakes with maple syrup.',
           priceCents: 1099,
-          tags: ["sweet"]
+          tags: ['sweet'],
         },
         {
           restaurantId: restaurant.id,
           sectionId: lunch.id,
-          name: "Roasted Veggie Bowl",
-          description: "Seasonal vegetables over quinoa and greens.",
+          name: 'Roasted Veggie Bowl',
+          description: 'Seasonal vegetables over quinoa and greens.',
           priceCents: 1299,
-          tags: ["vegan", "gluten-free"]
+          tags: ['vegan', 'gluten-free'],
         },
         {
           restaurantId: restaurant.id,
           sectionId: lunch.id,
-          name: "Grilled Chicken Sandwich",
-          description: "Herb marinated chicken breast with aioli.",
+          name: 'Grilled Chicken Sandwich',
+          description: 'Herb marinated chicken breast with aioli.',
           priceCents: 1199,
-          tags: ["popular"]
+          tags: ['popular'],
         },
         {
           restaurantId: restaurant.id,
-          name: "House Lemonade",
-          description: "Fresh squeezed lemons with mint.",
+          name: 'House Lemonade',
+          description: 'Fresh squeezed lemons with mint.',
           priceCents: 399,
-          tags: ["drink"]
+          tags: ['drink'],
         },
         {
           restaurantId: restaurant.id,
-          name: "Chocolate Chip Cookie",
-          description: "Baked in-house every morning.",
+          name: 'Chocolate Chip Cookie',
+          description: 'Baked in-house every morning.',
           priceCents: 249,
-          tags: ["dessert"]
-        }
-      ]
+          tags: ['dessert'],
+        },
+      ],
     });
 
     return restaurant;
@@ -133,36 +133,39 @@ async function main() {
   const [restaurantOne, restaurantTwo] = await Promise.all([
     createRestaurant(
       merchantOne.id,
-      "RouteDash Fuel Kitchen",
-      "123 Main St, Durham NC",
+      'RouteDash Fuel Kitchen',
+      '123 Main St, Durham NC',
       35.994,
-      -78.898
+      -78.898,
     ),
     createRestaurant(
       merchantTwo.id,
-      "RouteDash Eats Lab",
-      "500 Hillsborough St, Raleigh NC",
+      'RouteDash Eats Lab',
+      '500 Hillsborough St, Raleigh NC',
       35.787,
-      -78.647
-    )
+      -78.647,
+    ),
   ]);
 
   const restaurantOneItems = await prisma.menuItem.findMany({
     where: { restaurantId: restaurantOne.id },
-    orderBy: { name: "asc" }
+    orderBy: { name: 'asc' },
   });
 
   const restaurantTwoItems = await prisma.menuItem.findMany({
     where: { restaurantId: restaurantTwo.id },
-    orderBy: { name: "asc" }
+    orderBy: { name: 'asc' },
   });
 
   const pendingOrderItems = restaurantOneItems.slice(0, 2).map((item, index) => ({
     menuItemId: item.id,
     quantity: index === 0 ? 1 : 2,
-    priceCents: item.priceCents
+    priceCents: item.priceCents,
   }));
-  const pendingOrderTotal = pendingOrderItems.reduce((sum, item) => sum + item.priceCents * item.quantity, 0);
+  const pendingOrderTotal = pendingOrderItems.reduce(
+    (sum, item) => sum + item.priceCents * item.quantity,
+    0,
+  );
 
   await prisma.order.create({
     data: {
@@ -170,21 +173,24 @@ async function main() {
       restaurantId: restaurantOne.id,
       status: OrderStatus.PENDING,
       pickupEtaMin: 15,
-      routeOrigin: "Raleigh, NC",
-      routeDestination: "Durham, NC",
+      routeOrigin: 'Raleigh, NC',
+      routeDestination: 'Durham, NC',
       totalCents: pendingOrderTotal,
       items: {
-        create: pendingOrderItems
-      }
-    }
+        create: pendingOrderItems,
+      },
+    },
   });
 
   const processingOrderItems = restaurantOneItems.slice(2, 4).map((item) => ({
     menuItemId: item.id,
     quantity: 1,
-    priceCents: item.priceCents
+    priceCents: item.priceCents,
   }));
-  const processingOrderTotal = processingOrderItems.reduce((sum, item) => sum + item.priceCents * item.quantity, 0);
+  const processingOrderTotal = processingOrderItems.reduce(
+    (sum, item) => sum + item.priceCents * item.quantity,
+    0,
+  );
 
   await prisma.order.create({
     data: {
@@ -192,21 +198,24 @@ async function main() {
       restaurantId: restaurantOne.id,
       status: OrderStatus.PREPARING,
       pickupEtaMin: 10,
-      routeOrigin: "Cary, NC",
-      routeDestination: "Durham, NC",
+      routeOrigin: 'Cary, NC',
+      routeDestination: 'Durham, NC',
       totalCents: processingOrderTotal,
       items: {
-        create: processingOrderItems
-      }
-    }
+        create: processingOrderItems,
+      },
+    },
   });
 
   const readyOrderItems = restaurantTwoItems.slice(0, 2).map((item) => ({
     menuItemId: item.id,
     quantity: 1,
-    priceCents: item.priceCents
+    priceCents: item.priceCents,
   }));
-  const readyOrderTotal = readyOrderItems.reduce((sum, item) => sum + item.priceCents * item.quantity, 0);
+  const readyOrderTotal = readyOrderItems.reduce(
+    (sum, item) => sum + item.priceCents * item.quantity,
+    0,
+  );
 
   await prisma.order.create({
     data: {
@@ -214,18 +223,18 @@ async function main() {
       restaurantId: restaurantTwo.id,
       status: OrderStatus.READY,
       pickupEtaMin: 5,
-      routeOrigin: "Chapel Hill, NC",
-      routeDestination: "Raleigh, NC",
+      routeOrigin: 'Chapel Hill, NC',
+      routeDestination: 'Raleigh, NC',
       totalCents: readyOrderTotal,
       items: {
-        create: readyOrderItems
-      }
-    }
+        create: readyOrderItems,
+      },
+    },
   });
 
-  console.log("Seed complete:", {
+  console.log('Seed complete:', {
     customer: customer.email,
-    merchants: [merchantOne.email, merchantTwo.email]
+    merchants: [merchantOne.email, merchantTwo.email],
   });
 }
 

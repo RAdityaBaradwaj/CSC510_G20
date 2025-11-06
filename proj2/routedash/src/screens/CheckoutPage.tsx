@@ -264,13 +264,13 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
               expiry: formatExpiryDisplay(sanitizeExpiry(cardDetails.expiry)),
             }
           : paymentMethod === "apple_pay"
-          ? {
-              method: "apple_pay",
-              wallet: "Apple Pay",
-              last4: selectedAppleCard?.last4 ?? "",
-              token: `apple-pay-${selectedAppleCard?.id ?? "token"}`,
-            }
-          : { method: "arrival" };
+            ? {
+                method: "apple_pay",
+                wallet: "Apple Pay",
+                last4: selectedAppleCard?.last4 ?? "",
+                token: `apple-pay-${selectedAppleCard?.id ?? "token"}`,
+              }
+            : { method: "arrival" };
 
       const payload = {
         userId: user?.id,

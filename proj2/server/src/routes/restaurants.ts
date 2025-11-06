@@ -1,10 +1,10 @@
-import { OrderStatus } from "@prisma/client";
-import { Router } from "express";
-import { z } from "zod";
+import { OrderStatus } from '@prisma/client';
+import { Router } from 'express';
+import { z } from 'zod';
 
-import { requireAuth, requireRole } from "../middleware/auth";
-import { ensureRestaurantOwnership } from "../middleware/ownership";
-import { listOrdersForRestaurant, updateOrderStatusForRestaurant } from "../services/orderService";
+import { requireAuth, requireRole } from '../middleware/auth';
+import { ensureRestaurantOwnership } from '../middleware/ownership';
+import { listOrdersForRestaurant, updateOrderStatusForRestaurant } from '../services/orderService';
 import {
   getActiveRestaurants,
   getRestaurantMenu,
@@ -13,21 +13,21 @@ import {
   deleteMenuSection,
   createMenuItem,
   updateMenuItem,
-  deleteMenuItem
-} from "../services/restaurantService";
+  deleteMenuItem,
+} from '../services/restaurantService';
 
 const restaurantIdParam = z.object({
-  restaurantId: z.string().uuid()
+  restaurantId: z.string().uuid(),
 });
 
 const sectionPayload = z.object({
   title: z.string().min(1),
-  position: z.number().int().nonnegative().optional()
+  position: z.number().int().nonnegative().optional(),
 });
 
 const sectionUpdatePayload = z.object({
   title: z.string().min(1).optional(),
-  position: z.number().int().nonnegative().optional()
+  position: z.number().int().nonnegative().optional(),
 });
 
 const itemPayload = z.object({
@@ -36,18 +36,18 @@ const itemPayload = z.object({
   description: z.string().optional(),
   priceCents: z.number().int().nonnegative(),
   isAvailable: z.boolean().optional(),
-  tags: z.array(z.string()).optional()
+  tags: z.array(z.string()).optional(),
 });
 
 const itemUpdatePayload = itemPayload.partial();
 
 const orderStatusPayload = z.object({
-  status: z.nativeEnum(OrderStatus)
+  status: z.nativeEnum(OrderStatus),
 });
 
 export const restaurantRouter = Router();
 
-restaurantRouter.get("/", async (_req, res, next) => {
+restaurantRouter.get('/', async (_req, res, next) => {
   try {
     const restaurants = await getActiveRestaurants();
     res.json({ restaurants });
@@ -56,7 +56,7 @@ restaurantRouter.get("/", async (_req, res, next) => {
   }
 });
 
-restaurantRouter.get("/:restaurantId/menu", async (req, res, next) => {
+restaurantRouter.get('/:restaurantId/menu', async (req, res, next) => {
   try {
     const { restaurantId } = restaurantIdParam.parse(req.params);
     const result = await getRestaurantMenu(restaurantId);
@@ -67,9 +67,9 @@ restaurantRouter.get("/:restaurantId/menu", async (req, res, next) => {
 });
 
 restaurantRouter.get(
-  "/:restaurantId/orders",
+  '/:restaurantId/orders',
   requireAuth,
-  requireRole("RESTAURANT"),
+  requireRole('RESTAURANT'),
   ensureRestaurantOwnership,
   async (req, res, next) => {
     try {
@@ -79,13 +79,13 @@ restaurantRouter.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 restaurantRouter.post(
-  "/:restaurantId/menu/sections",
+  '/:restaurantId/menu/sections',
   requireAuth,
-  requireRole("RESTAURANT"),
+  requireRole('RESTAURANT'),
   ensureRestaurantOwnership,
   async (req, res, next) => {
     try {
@@ -96,13 +96,13 @@ restaurantRouter.post(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 restaurantRouter.patch(
-  "/:restaurantId/menu/sections/:sectionId",
+  '/:restaurantId/menu/sections/:sectionId',
   requireAuth,
-  requireRole("RESTAURANT"),
+  requireRole('RESTAURANT'),
   ensureRestaurantOwnership,
   async (req, res, next) => {
     try {
@@ -113,13 +113,13 @@ restaurantRouter.patch(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 restaurantRouter.delete(
-  "/:restaurantId/menu/sections/:sectionId",
+  '/:restaurantId/menu/sections/:sectionId',
   requireAuth,
-  requireRole("RESTAURANT"),
+  requireRole('RESTAURANT'),
   ensureRestaurantOwnership,
   async (req, res, next) => {
     try {
@@ -129,13 +129,13 @@ restaurantRouter.delete(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 restaurantRouter.post(
-  "/:restaurantId/menu/items",
+  '/:restaurantId/menu/items',
   requireAuth,
-  requireRole("RESTAURANT"),
+  requireRole('RESTAURANT'),
   ensureRestaurantOwnership,
   async (req, res, next) => {
     try {
@@ -146,13 +146,13 @@ restaurantRouter.post(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 restaurantRouter.patch(
-  "/:restaurantId/menu/items/:itemId",
+  '/:restaurantId/menu/items/:itemId',
   requireAuth,
-  requireRole("RESTAURANT"),
+  requireRole('RESTAURANT'),
   ensureRestaurantOwnership,
   async (req, res, next) => {
     try {
@@ -163,13 +163,13 @@ restaurantRouter.patch(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 restaurantRouter.delete(
-  "/:restaurantId/menu/items/:itemId",
+  '/:restaurantId/menu/items/:itemId',
   requireAuth,
-  requireRole("RESTAURANT"),
+  requireRole('RESTAURANT'),
   ensureRestaurantOwnership,
   async (req, res, next) => {
     try {
@@ -179,22 +179,26 @@ restaurantRouter.delete(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 restaurantRouter.patch(
-  "/:restaurantId/orders/:orderId",
+  '/:restaurantId/orders/:orderId',
   requireAuth,
-  requireRole("RESTAURANT"),
+  requireRole('RESTAURANT'),
   ensureRestaurantOwnership,
   async (req, res, next) => {
     try {
       const params = restaurantIdParam.extend({ orderId: z.string().uuid() }).parse(req.params);
       const payload = orderStatusPayload.parse(req.body);
-      const order = await updateOrderStatusForRestaurant(params.restaurantId, params.orderId, payload.status);
+      const order = await updateOrderStatusForRestaurant(
+        params.restaurantId,
+        params.orderId,
+        payload.status,
+      );
       res.json({ order });
     } catch (error) {
       next(error);
     }
-  }
+  },
 );

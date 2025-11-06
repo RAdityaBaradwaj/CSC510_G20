@@ -159,7 +159,7 @@ export const useDirections = () => {
         const distanceMeters =
           typeof leg?.distanceMeters === "number" && leg.distanceMeters > 0
             ? leg.distanceMeters
-            : route.distanceMeters ?? 0;
+            : (route.distanceMeters ?? 0);
 
         const nextResult: DirectionsResult = {
           coordinates,

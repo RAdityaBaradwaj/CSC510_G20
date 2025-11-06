@@ -1,8 +1,8 @@
-import { MenuItemAction, Prisma } from "@prisma/client";
+import { MenuItemAction, Prisma } from '@prisma/client';
 
-import { HttpError } from "../errors/HttpError";
-import { prisma } from "../lib/prisma";
-import { log } from "../logger";
+import { HttpError } from '../errors/HttpError';
+import { prisma } from '../lib/prisma';
+import { log } from '../logger';
 
 type SectionCreateInput = {
   title: string;
@@ -31,9 +31,9 @@ export const getActiveRestaurants = () =>
       name: true,
       address: true,
       latitude: true,
-      longitude: true
+      longitude: true,
     },
-    orderBy: { name: "asc" }
+    orderBy: { name: 'asc' },
   });
 
 export const getRestaurantMenu = async (restaurantId: string) => {
@@ -41,37 +41,37 @@ export const getRestaurantMenu = async (restaurantId: string) => {
     where: { id: restaurantId, isActive: true },
     include: {
       sections: {
-        orderBy: { position: "asc" },
+        orderBy: { position: 'asc' },
         include: {
           items: {
-            orderBy: { name: "asc" }
-          }
-        }
+            orderBy: { name: 'asc' },
+          },
+        },
       },
       menuItems: {
         where: { sectionId: null },
-        orderBy: { name: "asc" }
-      }
-    }
+        orderBy: { name: 'asc' },
+      },
+    },
   });
 
   if (!restaurant) {
-    throw new HttpError(404, "Restaurant not found");
+    throw new HttpError(404, 'Restaurant not found');
   }
 
   const sections = restaurant.sections.map((section) => ({
     id: section.id,
     title: section.title,
     position: section.position,
-    items: section.items
+    items: section.items,
   }));
 
   if (restaurant.menuItems.length) {
     sections.push({
-      id: "ungrouped",
-      title: "Featured",
+      id: 'ungrouped',
+      title: 'Featured',
       position: sections.length,
-      items: restaurant.menuItems
+      items: restaurant.menuItems,
     });
   }
 
@@ -81,9 +81,9 @@ export const getRestaurantMenu = async (restaurantId: string) => {
       name: restaurant.name,
       address: restaurant.address,
       latitude: restaurant.latitude,
-      longitude: restaurant.longitude
+      longitude: restaurant.longitude,
     },
-    sections
+    sections,
   };
 };
 
@@ -92,37 +92,37 @@ export const createMenuSection = (restaurantId: string, input: SectionCreateInpu
     data: {
       restaurantId,
       title: input.title,
-      position: input.position ?? 0
-    }
+      position: input.position ?? 0,
+    },
   });
 
 export const updateMenuSection = async (
   restaurantId: string,
   sectionId: string,
-  input: SectionUpdateInput
+  input: SectionUpdateInput,
 ) => {
   const section = await prisma.menuSection.findUnique({
-    where: { id: sectionId, restaurantId }
+    where: { id: sectionId, restaurantId },
   });
   if (!section) {
-    throw new HttpError(404, "Section not found");
+    throw new HttpError(404, 'Section not found');
   }
 
   return prisma.menuSection.update({
     where: { id: sectionId },
     data: {
       title: input.title ?? section.title,
-      position: input.position ?? section.position
-    }
+      position: input.position ?? section.position,
+    },
   });
 };
 
 export const deleteMenuSection = async (restaurantId: string, sectionId: string) => {
   const section = await prisma.menuSection.findUnique({
-    where: { id: sectionId, restaurantId }
+    where: { id: sectionId, restaurantId },
   });
   if (!section) {
-    throw new HttpError(404, "Section not found");
+    throw new HttpError(404, 'Section not found');
   }
 
   await prisma.menuSection.delete({ where: { id: sectionId } });
@@ -134,7 +134,7 @@ const logMenuChange = async ({
   userId,
   action,
   before,
-  after
+  after,
 }: {
   restaurantId: string;
   menuItemId: string;
@@ -150,28 +150,24 @@ const logMenuChange = async ({
       userId,
       action,
       beforeJSON: before ? JSON.stringify(before) : undefined,
-      afterJSON: after ? JSON.stringify(after) : undefined
-    }
+      afterJSON: after ? JSON.stringify(after) : undefined,
+    },
   });
 
-  log.info("menu_item_change", { action, restaurantId, menuItemId });
+  log.info('menu_item_change', { action, restaurantId, menuItemId });
 };
 
-export const createMenuItem = async (
-  restaurantId: string,
-  userId: string,
-  input: ItemInput
-) => {
+export const createMenuItem = async (restaurantId: string, userId: string, input: ItemInput) => {
   const item = await prisma.menuItem.create({
     data: {
       restaurantId,
       sectionId: input.sectionId ?? null,
-      name: input.name ?? "Untitled Item",
-      description: input.description ?? "",
+      name: input.name ?? 'Untitled Item',
+      description: input.description ?? '',
       priceCents: input.priceCents ?? 0,
       isAvailable: input.isAvailable ?? true,
-      tags: input.tags ?? []
-    }
+      tags: input.tags ?? [],
+    },
   });
 
   await logMenuChange({
@@ -179,7 +175,7 @@ export const createMenuItem = async (
     menuItemId: item.id,
     userId,
     action: MenuItemAction.CREATE,
-    after: item
+    after: item,
   });
 
   return item;
@@ -189,13 +185,13 @@ export const updateMenuItem = async (
   restaurantId: string,
   itemId: string,
   userId: string,
-  input: ItemInput
+  input: ItemInput,
 ) => {
   const existing = await prisma.menuItem.findFirst({
-    where: { id: itemId, restaurantId }
+    where: { id: itemId, restaurantId },
   });
   if (!existing) {
-    throw new HttpError(404, "Menu item not found");
+    throw new HttpError(404, 'Menu item not found');
   }
 
   const updated = await prisma.menuItem.update({
@@ -206,8 +202,8 @@ export const updateMenuItem = async (
       description: input.description ?? existing.description,
       priceCents: input.priceCents ?? existing.priceCents,
       isAvailable: input.isAvailable ?? existing.isAvailable,
-      tags: input.tags ?? existing.tags
-    }
+      tags: input.tags ?? existing.tags,
+    },
   });
 
   await logMenuChange({
@@ -216,7 +212,7 @@ export const updateMenuItem = async (
     userId,
     action: MenuItemAction.UPDATE,
     before: existing,
-    after: updated
+    after: updated,
   });
 
   return updated;
@@ -224,10 +220,10 @@ export const updateMenuItem = async (
 
 export const deleteMenuItem = async (restaurantId: string, itemId: string, userId: string) => {
   const existing = await prisma.menuItem.findFirst({
-    where: { id: itemId, restaurantId }
+    where: { id: itemId, restaurantId },
   });
   if (!existing) {
-    throw new HttpError(404, "Menu item not found");
+    throw new HttpError(404, 'Menu item not found');
   }
 
   await prisma.menuItem.delete({ where: { id: itemId } });
@@ -237,6 +233,6 @@ export const deleteMenuItem = async (restaurantId: string, itemId: string, userI
     menuItemId: itemId,
     userId,
     action: MenuItemAction.DELETE,
-    before: existing
+    before: existing,
   });
 };
