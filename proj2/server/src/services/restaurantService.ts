@@ -140,8 +140,8 @@ const logMenuChange = async ({
   menuItemId: string;
   userId: string;
   action: MenuItemAction;
-  before?: Prisma.MenuItemGetPayload<{}> | null;
-  after?: Prisma.MenuItemGetPayload<{}> | null;
+  before?: Prisma.MenuItem | null;
+  after?: Prisma.MenuItem | null;
 }) => {
   await prisma.menuItemChangeLog.create({
     data: {

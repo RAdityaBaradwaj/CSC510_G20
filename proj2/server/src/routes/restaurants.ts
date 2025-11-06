@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { requireAuth, requireRole } from "../middleware/auth";
 import { ensureRestaurantOwnership } from "../middleware/ownership";
+import { listOrdersForRestaurant, updateOrderStatusForRestaurant } from "../services/orderService";
 import {
   getActiveRestaurants,
   getRestaurantMenu,
@@ -14,7 +15,6 @@ import {
   updateMenuItem,
   deleteMenuItem
 } from "../services/restaurantService";
-import { listOrdersForRestaurant, updateOrderStatusForRestaurant } from "../services/orderService";
 
 const restaurantIdParam = z.object({
   restaurantId: z.string().uuid()

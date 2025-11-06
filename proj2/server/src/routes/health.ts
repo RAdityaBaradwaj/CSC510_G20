@@ -1,4 +1,5 @@
 import { Router } from "express";
+
 import { env } from "../env";
 
 export const healthRouter = Router();

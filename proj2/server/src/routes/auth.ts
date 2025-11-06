@@ -2,9 +2,9 @@ import { Router, Response } from "express";
 import { z } from "zod";
 
 import { HttpError } from "../errors/HttpError";
+import { requireAuth } from "../middleware/auth";
 import { createCustomer, createRestaurantOwner, authenticateUser, serializeUser } from "../services/authService";
 import { COOKIE_NAME, cookieOptions, signSession } from "../utils/jwt";
-import { requireAuth } from "../middleware/auth";
 
 export const authRouter = Router();
 

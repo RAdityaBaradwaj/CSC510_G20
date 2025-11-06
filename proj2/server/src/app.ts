@@ -8,8 +8,8 @@ import { HttpError } from "./errors/HttpError";
 import { httpLogger, log } from "./logger";
 import { authRouter } from "./routes/auth";
 import { healthRouter } from "./routes/health";
-import { restaurantRouter } from "./routes/restaurants";
 import { ordersRouter } from "./routes/orders";
+import { restaurantRouter } from "./routes/restaurants";
 
 export const createApp = () => {
   const app = express();
@@ -35,12 +35,7 @@ export const createApp = () => {
   });
 
   app.use(
-    (
-      err: Error,
-      _req: express.Request,
-      res: express.Response,
-      _next: express.NextFunction
-    ) => {
+    (err: Error, _req: express.Request, res: express.Response) => {
       if (err instanceof HttpError) {
         return res.status(err.status).json({ error: err.message });
       }

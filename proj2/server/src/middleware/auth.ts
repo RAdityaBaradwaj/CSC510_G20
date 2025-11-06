@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 
-import { prisma } from "../lib/prisma";
 import { HttpError } from "../errors/HttpError";
+import { prisma } from "../lib/prisma";
 import { COOKIE_NAME, verifySession } from "../utils/jwt";
 
 export const requireAuth = async (req: Request, _res: Response, next: NextFunction) => {
