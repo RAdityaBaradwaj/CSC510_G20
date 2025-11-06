@@ -1,6 +1,4 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import axios from "axios";
-import Constants from "expo-constants";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -16,19 +14,9 @@ import {
   View
 } from "react-native";
 
+import { apiFetch, apiPost } from "../api/client";
 import { useAuth } from "../context/AuthContext";
-import type { CartItem, RootStackParamList } from "../navigation/types";
-
-const API_URL =
-  (Constants?.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl ??
-  (Constants?.manifest?.extra as { apiUrl?: string } | undefined)?.apiUrl ??
-  "http://localhost:4000";
-
-const client = axios.create({
-  baseURL: API_URL,
-  withCredentials: true,
-  headers: { "Content-Type": "application/json" }
-});
+import type { CartItem, OrderStatusValue, RootStackParamList } from "../navigation/types";
 
 const TAX_RATE = 0.0825;
 
@@ -45,8 +33,11 @@ type CartResponse = {
 type OrderResponse = {
   order: {
     id: string;
+    status: OrderStatusValue;
     totalCents: number;
     pickupEtaMin: number;
+    routeOrigin: string;
+    routeDestination: string;
     items: Array<{
       id: string;
       menuItemId: string;
@@ -104,9 +95,9 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
     setIsLoading(true);
     setFetchError(null);
     try {
-      const response = await client.get<CartResponse>("/api/cart");
-      if (response.data?.items?.length) {
-        setCartItems(response.data.items);
+      const response = await apiFetch<CartResponse>("/api/cart");
+      if (response.items?.length) {
+        setCartItems(response.items);
       }
     } catch (error) {
       if (!cartItems.length) {
@@ -247,28 +238,29 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
         paymentDetails
       };
 
-      const response = await client.post<OrderResponse>("/api/orders", payload);
+      const response = await apiPost<OrderResponse>("/api/orders", payload);
 
       const successMessage =
         paymentMethod === "arrival"
           ? "Order placed! Pay when you pick up."
           : "Payment processed and order placed!";
       Alert.alert("Order placed", successMessage);
+      const nextOrder = {
+        ...response.order,
+        status: response.order.status ?? "PENDING",
+        totalCents: totalWithTaxCents,
+        restaurant,
+        items: response.order.items.map((item) => ({
+          ...item,
+          name:
+            item.menuItem?.name ??
+            cartItems.find((entry) => entry.menuItemId === item.menuItemId)?.name ??
+            "Item"
+        }))
+      };
+
       navigation.replace("OrderStatus", {
-        order: {
-          ...response.data.order,
-          subtotalCents,
-          taxCents,
-          totalCents: totalWithTaxCents,
-          restaurant,
-          items: response.data.order.items.map((item) => ({
-            ...item,
-            name:
-              item.menuItem?.name ??
-              cartItems.find((entry) => entry.menuItemId === item.menuItemId)?.name ??
-              "Item"
-          }))
-        }
+        order: nextOrder
       });
     } catch (error) {
       setSubmitError((error as Error).message || "Unable to place order. Please try again.");
