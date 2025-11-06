@@ -315,10 +315,10 @@ export const MerchantDashboardScreen = () => {
               )}
               ListEmptyComponent={<Text style={styles.meta}>No sections yet</Text>}
             />
-            <Pressable style={styles.primaryBtn} onPress={handleAddItem}>
-              <Text style={styles.primaryBtnText}>Add Item</Text>
-            </Pressable>
-          </View>
+        <Pressable style={[styles.primaryBtn, styles.addItemBtn]} onPress={handleAddItem}>
+          <Text style={styles.primaryBtnText}>Add Item</Text>
+        </Pressable>
+      </View>
 
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Menu</Text>
@@ -411,6 +411,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: "center"
+  },
+  addItemBtn: {
+    marginTop: 12
   },
   primaryBtnText: { color: "#FFF", fontWeight: "700" },
   logoutBtn: {
