@@ -217,6 +217,7 @@ export const MerchantDashboardScreen = () => {
           {!isOrdersLoading && orders.length === 0 ? <Text style={styles.meta}>No orders yet</Text> : null}
           {orders.map((order) => {
             const actions = ORDER_ACTIONS[order.status] ?? [];
+            const createdLabel = new Date(order.createdAt).toLocaleString();
             return (
               <View key={order.id} style={styles.card}>
                 <View style={styles.orderHeader}>
@@ -226,6 +227,7 @@ export const MerchantDashboardScreen = () => {
                   </View>
                 </View>
                 <Text style={styles.meta}>Customer: {order.customer.name}</Text>
+                <Text style={styles.meta}>Placed: {createdLabel}</Text>
                 <Text style={styles.meta}>
                   Route: {order.routeOrigin} → {order.routeDestination}
                 </Text>
