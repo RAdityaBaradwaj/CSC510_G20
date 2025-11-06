@@ -14,11 +14,13 @@ export const LogoutButton = () => {
 
 const styles = StyleSheet.create({
   button: {
-    paddingHorizontal: 12,
-    paddingVertical: 6
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: "#E0E7FF"
   },
   text: {
-    color: "#2563EB",
+    color: "#1E3A8A",
     fontWeight: "600"
   }
 });

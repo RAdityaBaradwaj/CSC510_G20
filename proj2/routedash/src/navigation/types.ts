@@ -56,5 +56,11 @@ export type RootStackParamList = {
   Menu: { restaurant: RestaurantSummary; trip: TripContext };
   Checkout: { cart: CartItem[]; restaurant: RestaurantSummary; trip: TripContext };
   OrderStatus: { order: OrderSummary };
+  Orders: undefined;
   MerchantDashboard: undefined;
+};
+
+export type CustomerTabParamList = {
+  Trip: undefined;
+  PreviousOrders: undefined;
 };
