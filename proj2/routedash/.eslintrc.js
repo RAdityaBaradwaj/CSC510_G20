@@ -11,6 +11,14 @@ module.exports = {
         useTabs: false,
         trailingComma: "all"
       }
+    ],
+    quotes: [
+      "error",
+      "double",
+      {
+        avoidEscape: true,
+        allowTemplateLiterals: true
+      }
     ]
   }
 };

@@ -5,22 +5,20 @@ const API_URL =
   (Constants?.manifest?.extra as { apiUrl?: string } | undefined)?.apiUrl ??
   "http://localhost:4000";
 
-type RequestOptions = RequestInit & {
-  requireAuth?: boolean;
-};
+type RequestOptions = RequestInit & {};
 
 export const apiFetch = async <T>(
   path: string,
-  { headers, requireAuth = true, ...options }: RequestOptions = {}
+  { headers, ...options }: RequestOptions = {},
 ): Promise<T> => {
   const response = await fetch(`${API_URL}${path}`, {
     method: "GET",
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...headers
+      ...headers,
     },
-    ...options
+    ...options,
   });
 
   if (!response.ok) {
@@ -35,22 +33,30 @@ export const apiFetch = async <T>(
   return response.json() as Promise<T>;
 };
 
-export const apiPost = <T>(path: string, body?: unknown, options?: RequestOptions) =>
+export const apiPost = <T>(
+  path: string,
+  body?: unknown,
+  options?: RequestOptions,
+) =>
   apiFetch<T>(path, {
     ...options,
     method: "POST",
-    body: body ? JSON.stringify(body) : undefined
+    body: body ? JSON.stringify(body) : undefined,
   });
 
-export const apiPatch = <T>(path: string, body?: unknown, options?: RequestOptions) =>
+export const apiPatch = <T>(
+  path: string,
+  body?: unknown,
+  options?: RequestOptions,
+) =>
   apiFetch<T>(path, {
     ...options,
     method: "PATCH",
-    body: body ? JSON.stringify(body) : undefined
+    body: body ? JSON.stringify(body) : undefined,
   });
 
 export const apiDelete = <T>(path: string, options?: RequestOptions) =>
   apiFetch<T>(path, {
     ...options,
-    method: "DELETE"
+    method: "DELETE",
   });

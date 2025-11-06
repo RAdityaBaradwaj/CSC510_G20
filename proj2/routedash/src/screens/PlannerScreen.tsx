@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Platform,
   Pressable,
@@ -7,27 +7,39 @@ import {
   Text,
   TextInput,
   View,
-  useWindowDimensions
+  useWindowDimensions,
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import MapView, { LatLng, Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, {
+  LatLng,
+  Marker,
+  Polyline,
+  PROVIDER_GOOGLE,
+} from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { LogoutButton } from "../components/LogoutButton";
 import { useAuth } from "../context/AuthContext";
 import { useDirections } from "../hooks/useDirections";
-import { PlaceSuggestion, usePlacesAutocomplete } from "../hooks/usePlacesAutocomplete";
+import {
+  PlaceSuggestion,
+  usePlacesAutocomplete,
+} from "../hooks/usePlacesAutocomplete";
 import { useRestaurantRecommendations } from "../hooks/useRestaurantRecommendations";
 import type { Restaurant as RecommendedRestaurant } from "../hooks/useRestaurantRecommendations";
-import { RootStackParamList, RestaurantSummary, TripContext } from "../navigation/types";
+import {
+  RootStackParamList,
+  RestaurantSummary,
+  TripContext,
+} from "../navigation/types";
 
 const DEFAULT_REGION = {
   latitude: 37.7749,
   longitude: -122.4194,
   latitudeDelta: 0.5,
-  longitudeDelta: 0.5
+  longitudeDelta: 0.5,
 };
 
 const formatDistance = (meters: number) => {
@@ -68,14 +80,15 @@ const computeRegionFromCoordinates = (points: LatLng[]) => {
 };
 
 export const PlannerScreen = () => {
-  const { user, logout } = useAuth();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { user } = useAuth();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {
     error: directionsError,
     fetchRoute,
     isLoading: isDirectionsLoading,
     reset,
-    result
+    result,
   } = useDirections();
   const originAutocomplete = usePlacesAutocomplete();
   const destinationAutocomplete = usePlacesAutocomplete();
@@ -85,7 +98,7 @@ export const PlannerScreen = () => {
     isLoading: isRecommendationsLoading,
     items: restaurantRecommendations,
     targetTravelMinutes,
-    reset: resetRecommendations
+    reset: resetRecommendations,
   } = useRestaurantRecommendations();
 
   const [origin, setOrigin] = useState<string>("");
@@ -96,44 +109,61 @@ export const PlannerScreen = () => {
   const window = useWindowDimensions();
   const mapRef = useRef<MapView | null>(null);
   const originDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const destinationDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const destinationDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
-  const coordinates = result?.coordinates ?? [];
+  const coordinates = useMemo(
+    () => result?.coordinates ?? [],
+    [result?.coordinates],
+  );
   const startPoint: LatLng | undefined = coordinates[0];
   const endPoint: LatLng | undefined = coordinates[coordinates.length - 1];
   const totalMinutes = useMemo(
-    () => (result?.leg.durationSeconds ? Math.max(Math.round(result.leg.durationSeconds / 60), 1) : null),
-    [result?.leg.durationSeconds]
+    () =>
+      result?.leg.durationSeconds
+        ? Math.max(Math.round(result.leg.durationSeconds / 60), 1)
+        : null,
+    [result?.leg.durationSeconds],
   );
 
-  const region = useMemo(() => computeRegionFromCoordinates(coordinates), [coordinates]);
-  const mapHeight = useMemo(() => Math.max(260, window.height * 0.33), [window.height]);
+  const region = useMemo(
+    () => computeRegionFromCoordinates(coordinates),
+    [coordinates],
+  );
+  const mapHeight = useMemo(
+    () => Math.max(260, window.height * 0.33),
+    [window.height],
+  );
   const isCompactWidth = window.width < 380;
   const isCompactHeight = window.height < 760;
-  const statSpacingStyle = useMemo(() => (isCompactWidth ? undefined : styles.statCardSpacing), [isCompactWidth]);
+  const statSpacingStyle = useMemo(
+    () => (isCompactWidth ? undefined : styles.statCardSpacing),
+    [isCompactWidth],
+  );
 
   const sliderMin = totalMinutes ? 1 : 15;
   const sliderMax = totalMinutes ?? 120;
   const sliderStep = totalMinutes && totalMinutes <= 45 ? 1 : 5;
   const sliderValue = useMemo(
     () => Math.min(Math.max(mealWindow, sliderMin), sliderMax),
-    [mealWindow, sliderMax, sliderMin]
+    [mealWindow, sliderMax, sliderMin],
   );
 
   const tripContext: TripContext = useMemo(
     () => ({
       origin,
       destination,
-      pickupEtaMin: sliderValue
+      pickupEtaMin: sliderValue,
     }),
-    [destination, origin, sliderValue]
+    [destination, origin, sliderValue],
   );
 
   useEffect(() => {
     if (coordinates.length && mapRef.current) {
       mapRef.current.fitToCoordinates(coordinates, {
         edgePadding: { top: 80, right: 80, bottom: 80, left: 80 },
-        animated: true
+        animated: true,
       });
     }
   }, [coordinates]);
@@ -147,7 +177,7 @@ export const PlannerScreen = () => {
         clearTimeout(destinationDebounceRef.current);
       }
     },
-    []
+    [],
   );
 
   const handlePreviewRoute = async () => {
@@ -187,7 +217,7 @@ export const PlannerScreen = () => {
 
   const handleSelectSuggestion = (
     suggestion: PlaceSuggestion,
-    field: "origin" | "destination"
+    field: "origin" | "destination",
   ) => {
     if (field === "origin") {
       if (originDebounceRef.current) {
@@ -208,7 +238,11 @@ export const PlannerScreen = () => {
 
   useEffect(() => {
     if (result?.coordinates?.length && result.leg.durationSeconds) {
-      void fetchRestaurants(result.coordinates, result.leg.durationSeconds, sliderValue);
+      void fetchRestaurants(
+        result.coordinates,
+        result.leg.durationSeconds,
+        sliderValue,
+      );
     } else {
       resetRecommendations();
     }
@@ -217,7 +251,7 @@ export const PlannerScreen = () => {
     sliderValue,
     resetRecommendations,
     result?.coordinates,
-    result?.leg.durationSeconds
+    result?.leg.durationSeconds,
   ]);
 
   useEffect(() => {
@@ -274,7 +308,7 @@ export const PlannerScreen = () => {
     targetTravelMinutes,
     recommendationsError,
     isRoutePlotted,
-    sliderValue
+    sliderValue,
   ]);
 
   const handleOpenRestaurantMenu = (restaurant: RecommendedRestaurant) => {
@@ -287,15 +321,19 @@ export const PlannerScreen = () => {
       name: restaurant.name,
       address: restaurant.address,
       latitude: restaurant.location.latitude,
-      longitude: restaurant.location.longitude
+      longitude: restaurant.location.longitude,
     };
 
     navigation.navigate("Menu", { restaurant: summary, trip: tripContext });
   };
 
   const canPreview =
-    Boolean(origin.trim()) && Boolean(destination.trim()) && !isDirectionsLoading;
-  const canClear = Boolean(origin.trim() || destination.trim() || coordinates.length);
+    Boolean(origin.trim()) &&
+    Boolean(destination.trim()) &&
+    !isDirectionsLoading;
+  const canClear = Boolean(
+    origin.trim() || destination.trim() || coordinates.length,
+  );
   const canAdjustMealWindow = Boolean(totalMinutes && sliderMax > sliderMin);
 
   return (
@@ -311,11 +349,15 @@ export const PlannerScreen = () => {
         </View>
         <View style={styles.userBadge}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase() ?? "R"}</Text>
+            <Text style={styles.avatarText}>
+              {user?.name?.[0]?.toUpperCase() ?? "R"}
+            </Text>
           </View>
           <View style={styles.userDetails}>
             <Text style={styles.userName}>{user?.name ?? "Operator"}</Text>
-            <Text style={styles.userEmail}>{user?.email ?? "demo@routedash.com"}</Text>
+            <Text style={styles.userEmail}>
+              {user?.email ?? "demo@routedash.com"}
+            </Text>
           </View>
           {user?.role === "RESTAURANT" ? (
             <Pressable
@@ -329,20 +371,19 @@ export const PlannerScreen = () => {
       </View>
 
       <ScrollView
-  style={{ flex: 1 }}
-  contentContainerStyle={[
-    styles.scrollContent,
-    isCompactHeight && styles.scrollContentCompact,
-    { 
-      paddingHorizontal: isCompactWidth ? 16 : 24,
-      paddingBottom: 120,  // ensures space for bottom content
-      flexGrow: 1          // enables proper vertical scrolling
-    }
-  ]}
-  showsVerticalScrollIndicator={false}
-  keyboardShouldPersistTaps="handled"
->
-
+        style={{ flex: 1 }}
+        contentContainerStyle={[
+          styles.scrollContent,
+          isCompactHeight && styles.scrollContentCompact,
+          {
+            paddingHorizontal: isCompactWidth ? 16 : 24,
+            paddingBottom: 120, // ensures space for bottom content
+            flexGrow: 1, // enables proper vertical scrolling
+          },
+        ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={[styles.formCard, isCompactWidth && styles.cardCompact]}>
           <Text style={styles.sectionTitle}>Route details</Text>
 
@@ -357,7 +398,9 @@ export const PlannerScreen = () => {
               autoCapitalize="none"
             />
             {originAutocomplete.isLoading ? (
-              <Text style={styles.suggestionNote}>Searching for matching addresses…</Text>
+              <Text style={styles.suggestionNote}>
+                Searching for matching addresses…
+              </Text>
             ) : null}
             {originAutocomplete.suggestions.length ? (
               <View style={styles.suggestionList}>
@@ -366,13 +409,18 @@ export const PlannerScreen = () => {
                     key={suggestion.id}
                     style={[
                       styles.suggestionRow,
-                      index === originAutocomplete.suggestions.length - 1 && styles.suggestionRowLast
+                      index === originAutocomplete.suggestions.length - 1 &&
+                        styles.suggestionRowLast,
                     ]}
                     onPress={() => handleSelectSuggestion(suggestion, "origin")}
                   >
-                    <Text style={styles.suggestionPrimary}>{suggestion.primaryText}</Text>
+                    <Text style={styles.suggestionPrimary}>
+                      {suggestion.primaryText}
+                    </Text>
                     {suggestion.secondaryText ? (
-                      <Text style={styles.suggestionSecondary}>{suggestion.secondaryText}</Text>
+                      <Text style={styles.suggestionSecondary}>
+                        {suggestion.secondaryText}
+                      </Text>
                     ) : null}
                   </Pressable>
                 ))}
@@ -391,26 +439,37 @@ export const PlannerScreen = () => {
               autoCapitalize="none"
             />
             {destinationAutocomplete.isLoading ? (
-              <Text style={styles.suggestionNote}>Searching for matching addresses…</Text>
+              <Text style={styles.suggestionNote}>
+                Searching for matching addresses…
+              </Text>
             ) : null}
             {destinationAutocomplete.suggestions.length ? (
               <View style={styles.suggestionList}>
-                {destinationAutocomplete.suggestions.map((suggestion, index) => (
-                  <Pressable
-                    key={suggestion.id}
-                    style={[
-                      styles.suggestionRow,
-                      index === destinationAutocomplete.suggestions.length - 1 &&
-                        styles.suggestionRowLast
-                    ]}
-                    onPress={() => handleSelectSuggestion(suggestion, "destination")}
-                  >
-                    <Text style={styles.suggestionPrimary}>{suggestion.primaryText}</Text>
-                    {suggestion.secondaryText ? (
-                      <Text style={styles.suggestionSecondary}>{suggestion.secondaryText}</Text>
-                    ) : null}
-                  </Pressable>
-                ))}
+                {destinationAutocomplete.suggestions.map(
+                  (suggestion, index) => (
+                    <Pressable
+                      key={suggestion.id}
+                      style={[
+                        styles.suggestionRow,
+                        index ===
+                          destinationAutocomplete.suggestions.length - 1 &&
+                          styles.suggestionRowLast,
+                      ]}
+                      onPress={() =>
+                        handleSelectSuggestion(suggestion, "destination")
+                      }
+                    >
+                      <Text style={styles.suggestionPrimary}>
+                        {suggestion.primaryText}
+                      </Text>
+                      {suggestion.secondaryText ? (
+                        <Text style={styles.suggestionSecondary}>
+                          {suggestion.secondaryText}
+                        </Text>
+                      ) : null}
+                    </Pressable>
+                  ),
+                )}
               </View>
             ) : null}
           </View>
@@ -442,7 +501,7 @@ export const PlannerScreen = () => {
                 const stepSize = sliderStep || 1;
                 const next = Math.min(
                   Math.max(Math.round(value / stepSize) * stepSize, sliderMin),
-                  sliderMax
+                  sliderMax,
                 );
                 if (next !== mealWindow) {
                   setMealWindow(next);
@@ -465,26 +524,36 @@ export const PlannerScreen = () => {
           </View>
 
           <Pressable
-            style={[styles.secondaryButton, styles.clearButton, !canClear && styles.disabled]}
+            style={[
+              styles.secondaryButton,
+              styles.clearButton,
+              !canClear && styles.disabled,
+            ]}
             disabled={!canClear}
             onPress={handleClearPlanner}
           >
             <Text style={styles.secondaryButtonText}>Clear route</Text>
           </Pressable>
 
-          {directionsError ? <Text style={styles.errorBanner}>{directionsError}</Text> : null}
+          {directionsError ? (
+            <Text style={styles.errorBanner}>{directionsError}</Text>
+          ) : null}
           {originAutocomplete.error ? (
             <Text style={styles.inlineError}>{originAutocomplete.error}</Text>
           ) : null}
           {destinationAutocomplete.error ? (
-            <Text style={styles.inlineError}>{destinationAutocomplete.error}</Text>
+            <Text style={styles.inlineError}>
+              {destinationAutocomplete.error}
+            </Text>
           ) : null}
         </View>
 
         <View style={[styles.mapCard, isCompactWidth && styles.cardCompact]}>
           <View style={styles.mapHeader}>
             <Text style={styles.sectionTitle}>Live route</Text>
-            <Text style={styles.secondaryLabel}>{formatDistance(result?.leg.distanceMeters ?? 0)}</Text>
+            <Text style={styles.secondaryLabel}>
+              {formatDistance(result?.leg.distanceMeters ?? 0)}
+            </Text>
           </View>
 
           <View style={[styles.mapWrapper, { height: mapHeight }]}>
@@ -500,12 +569,24 @@ export const PlannerScreen = () => {
             >
               {coordinates.length ? (
                 <>
-                  <Polyline coordinates={coordinates} strokeColor="#2563eb" strokeWidth={5} />
+                  <Polyline
+                    coordinates={coordinates}
+                    strokeColor="#2563eb"
+                    strokeWidth={5}
+                  />
                   {startPoint ? (
-                    <Marker coordinate={startPoint} title="Origin" pinColor="#22c55e" />
+                    <Marker
+                      coordinate={startPoint}
+                      title="Origin"
+                      pinColor="#22c55e"
+                    />
                   ) : null}
                   {endPoint ? (
-                    <Marker coordinate={endPoint} title="Destination" pinColor="#ef4444" />
+                    <Marker
+                      coordinate={endPoint}
+                      title="Destination"
+                      pinColor="#ef4444"
+                    />
                   ) : null}
                 </>
               ) : null}
@@ -515,25 +596,32 @@ export const PlannerScreen = () => {
           <View style={styles.routeSummary}>
             <View style={[styles.statCard, statSpacingStyle]}>
               <Text style={styles.statLabel}>Drive time</Text>
-              <Text style={styles.statValue}>{result?.leg.durationText ?? "—"}</Text>
+              <Text style={styles.statValue}>
+                {result?.leg.durationText ?? "—"}
+              </Text>
             </View>
             <View style={[styles.statCard, statSpacingStyle]}>
               <Text style={styles.statLabel}>Distance</Text>
-              <Text style={styles.statValue}>{result?.leg.distanceText ?? "—"}</Text>
+              <Text style={styles.statValue}>
+                {result?.leg.distanceText ?? "—"}
+              </Text>
             </View>
             <View style={styles.statCard}>
               <Text style={styles.statLabel}>Top picks</Text>
               <Text style={styles.statValue}>
                 {isRecommendationsLoading
                   ? "…"
-                  : restaurantRecommendations.length || (isRoutePlotted ? "0" : "—")}
+                  : restaurantRecommendations.length ||
+                    (isRoutePlotted ? "0" : "—")}
               </Text>
             </View>
           </View>
         </View>
 
         {isRoutePlotted ? (
-          <View style={[styles.statusCard, isCompactWidth && styles.cardCompact]}>
+          <View
+            style={[styles.statusCard, isCompactWidth && styles.cardCompact]}
+          >
             <Text style={styles.sectionTitle}>Restaurant picks</Text>
             <Text style={styles.detailSubtitle}>
               {targetTravelMinutes
@@ -542,7 +630,9 @@ export const PlannerScreen = () => {
             </Text>
 
             {isRecommendationsLoading ? (
-              <Text style={styles.suggestionNote}>Finding popular restaurants near your route…</Text>
+              <Text style={styles.suggestionNote}>
+                Finding popular restaurants near your route…
+              </Text>
             ) : restaurantRecommendations.length ? (
               <View style={styles.recommendationList}>
                 {restaurantRecommendations.map((restaurant) => (
@@ -552,9 +642,13 @@ export const PlannerScreen = () => {
                     onPress={() => handleOpenRestaurantMenu(restaurant)}
                   >
                     <View style={styles.recommendationHeader}>
-                      <Text style={styles.recommendationName}>{restaurant.name}</Text>
+                      <Text style={styles.recommendationName}>
+                        {restaurant.name}
+                      </Text>
                     </View>
-                    <Text style={styles.recommendationMeta}>{restaurant.address}</Text>
+                    <Text style={styles.recommendationMeta}>
+                      {restaurant.address}
+                    </Text>
                     <Text style={styles.recommendationMeta}>
                       {restaurant.travelTimeMinutes
                         ? `~${restaurant.travelTimeMinutes} min from start`
@@ -565,30 +659,45 @@ export const PlannerScreen = () => {
               </View>
             ) : (
               <Text style={styles.suggestionNote}>
-                We didn’t spot standout restaurants near that window. Try tweaking the route or search again shortly.
+                We didn’t spot standout restaurants near that window. Try
+                tweaking the route or search again shortly.
               </Text>
             )}
 
-            {recommendationsError ? <Text style={styles.inlineError}>{recommendationsError}</Text> : null}
+            {recommendationsError ? (
+              <Text style={styles.inlineError}>{recommendationsError}</Text>
+            ) : null}
             <Pressable
-              style={[styles.secondaryButton, styles.browseButton, (!origin || !destination) && styles.disabled]}
+              style={[
+                styles.secondaryButton,
+                styles.browseButton,
+                (!origin || !destination) && styles.disabled,
+              ]}
               disabled={!origin || !destination}
-              onPress={() => navigation.navigate("Restaurants", { trip: tripContext })}
+              onPress={() =>
+                navigation.navigate("Restaurants", { trip: tripContext })
+              }
             >
-              <Text style={styles.secondaryButtonText}>Browse all registered restaurants</Text>
+              <Text style={styles.secondaryButtonText}>
+                Browse all registered restaurants
+              </Text>
             </Pressable>
           </View>
         ) : null}
 
         {result ? (
-          <View style={[styles.statusCard, isCompactWidth && styles.cardCompact]}>
+          <View
+            style={[styles.statusCard, isCompactWidth && styles.cardCompact]}
+          >
             <Text style={styles.sectionTitle}>Trip synopsis</Text>
             <Text style={styles.detailLabel}>Start</Text>
             <Text style={styles.detailValue}>{result.leg.startAddress}</Text>
             <Text style={styles.detailLabel}>Destination</Text>
             <Text style={styles.detailValue}>{result.leg.endAddress}</Text>
             <Text style={styles.detailLabel}>Estimated drive</Text>
-            <Text style={styles.detailValue}>{`${result.leg.durationText} • ${result.leg.distanceText}`}</Text>
+            <Text
+              style={styles.detailValue}
+            >{`${result.leg.durationText} • ${result.leg.distanceText}`}</Text>
           </View>
         ) : null}
       </ScrollView>
@@ -599,7 +708,7 @@ export const PlannerScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F1F5F9"
+    backgroundColor: "#F1F5F9",
   },
   header: {
     paddingHorizontal: 24,
@@ -607,36 +716,36 @@ const styles = StyleSheet.create({
     paddingTop: Platform.select({ ios: 12, android: 16 }),
     backgroundColor: "#FFFFFF",
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#E2E8F0"
+    borderBottomColor: "#E2E8F0",
   },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12
+    marginBottom: 12,
   },
   brandBadge: {
     fontSize: 14,
     fontWeight: "600",
     color: "#2563EB",
-    marginBottom: 6
+    marginBottom: 6,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#0F172A"
+    color: "#0F172A",
   },
   headerSubtitle: {
     fontSize: 14,
     color: "#475569",
-    marginTop: 2
+    marginTop: 2,
   },
   userBadge: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 4,
     flexWrap: "wrap",
-    gap: 12
+    gap: 12,
   },
   avatar: {
     width: 44,
@@ -644,49 +753,49 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     backgroundColor: "#1D4ED8",
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
   },
   avatarText: {
     color: "#FFFFFF",
     fontSize: 20,
-    fontWeight: "700"
+    fontWeight: "700",
   },
   userName: {
     fontWeight: "700",
     color: "#0F172A",
-    fontSize: 16
+    fontSize: 16,
   },
   userEmail: {
     color: "#475569",
-    fontSize: 12
+    fontSize: 12,
   },
   userDetails: {
-    marginLeft: 12
+    marginLeft: 12,
   },
   merchantLink: {
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 10,
-    backgroundColor: "#E0F2FE"
+    backgroundColor: "#E0F2FE",
   },
   merchantText: {
     color: "#0369A1",
-    fontWeight: "600"
+    fontWeight: "600",
   },
   scrollContent: {
     paddingTop: 24,
     paddingBottom: 48,
     gap: 24,
-    flexGrow: 1
+    flexGrow: 1,
   },
   scrollContentCompact: {
     paddingTop: 16,
     paddingBottom: 32,
-    gap: 18
+    gap: 18,
   },
   cardCompact: {
     padding: 16,
-    marginBottom: 20
+    marginBottom: 20,
   },
   formCard: {
     backgroundColor: "#FFFFFF",
@@ -697,22 +806,22 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 24,
     shadowOffset: { height: 12, width: 0 },
-    elevation: 5
+    elevation: 5,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
     color: "#0F172A",
-    marginBottom: 12
+    marginBottom: 12,
   },
   inputGroup: {
-    marginBottom: 16
+    marginBottom: 16,
   },
   inputLabel: {
     fontSize: 14,
     fontWeight: "600",
     color: "#0F172A",
-    marginBottom: 8
+    marginBottom: 8,
   },
   input: {
     borderRadius: 12,
@@ -722,7 +831,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: Platform.select({ ios: 16, android: 12 }),
     fontSize: 16,
-    color: "#0F172A"
+    color: "#0F172A",
   },
   mealWindowControl: {
     marginTop: 18,
@@ -730,64 +839,64 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E2E8F0",
     backgroundColor: "#F8FAFC",
-    padding: 16
+    padding: 16,
   },
   mealWindowHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12
+    marginBottom: 12,
   },
   mealWindowValue: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#2563EB"
+    color: "#2563EB",
   },
   mealWindowSlider: {
     width: "100%",
-    height: 40
+    height: 40,
   },
   mealWindowLabels: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 6
+    marginTop: 6,
   },
   mealWindowLabelText: {
     fontSize: 12,
-    color: "#64748B"
+    color: "#64748B",
   },
   primaryButton: {
     borderRadius: 14,
     backgroundColor: "#2563EB",
     paddingVertical: 16,
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
   },
   primaryButtonText: {
     color: "#FFFFFF",
     fontSize: 15,
-    fontWeight: "600"
+    fontWeight: "600",
   },
   secondaryButton: {
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#E0F2FE"
+    backgroundColor: "#E0F2FE",
   },
   clearButton: {
-    marginTop: 12
+    marginTop: 12,
   },
   secondaryButtonText: {
     color: "#0F172A",
     fontSize: 14,
-    fontWeight: "600"
+    fontWeight: "600",
   },
   browseButton: {
-    marginTop: 12
+    marginTop: 12,
   },
   disabled: {
-    opacity: 0.55
+    opacity: 0.55,
   },
   errorBanner: {
     marginTop: 18,
@@ -796,7 +905,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FEF3C7",
     color: "#92400E",
     fontSize: 14,
-    lineHeight: 20
+    lineHeight: 20,
   },
   inlineError: {
     marginTop: 12,
@@ -805,7 +914,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: "#FEE2E2",
     color: "#B91C1C",
-    fontSize: 13
+    fontSize: 13,
   },
   mapCard: {
     backgroundColor: "#FFFFFF",
@@ -816,26 +925,26 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 28,
     shadowOffset: { height: 14, width: 0 },
-    elevation: 6
+    elevation: 6,
   },
   mapHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12
+    marginBottom: 12,
   },
   secondaryLabel: {
     fontWeight: "600",
-    color: "#1E293B"
+    color: "#1E293B",
   },
   mapWrapper: {
     borderRadius: 16,
     overflow: "hidden",
     marginBottom: 16,
-    backgroundColor: "#E2E8F0"
+    backgroundColor: "#E2E8F0",
   },
   map: {
-    flex: 1
+    flex: 1,
   },
   routeSummary: {
     flexDirection: "row",
@@ -843,7 +952,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     flexWrap: "wrap",
     rowGap: 12,
-    columnGap: 12
+    columnGap: 12,
   },
   statCard: {
     flex: 1,
@@ -852,21 +961,21 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 16,
     paddingHorizontal: 12,
-    alignItems: "center"
+    alignItems: "center",
   },
   statCardSpacing: {
-    marginRight: 12
+    marginRight: 12,
   },
   statLabel: {
     color: "#475569",
     fontSize: 12,
     fontWeight: "600",
-    marginBottom: 4
+    marginBottom: 4,
   },
   statValue: {
     color: "#0F172A",
     fontSize: 18,
-    fontWeight: "700"
+    fontWeight: "700",
   },
   statusCard: {
     backgroundColor: "#FFFFFF",
@@ -878,27 +987,27 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     shadowOffset: { height: 12, width: 0 },
     elevation: 5,
-    gap: 8
+    gap: 8,
   },
   detailLabel: {
     fontSize: 12,
     fontWeight: "600",
     textTransform: "uppercase",
-    color: "#64748B"
+    color: "#64748B",
   },
   detailValue: {
     fontSize: 15,
-    color: "#0F172A"
+    color: "#0F172A",
   },
   detailSubtitle: {
     fontSize: 14,
     color: "#475569",
-    marginBottom: 10
+    marginBottom: 10,
   },
   suggestionNote: {
     marginTop: 8,
     fontSize: 12,
-    color: "#64748B"
+    color: "#64748B",
   },
   suggestionList: {
     marginTop: 8,
@@ -907,59 +1016,59 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "#FFFFFF",
     overflow: "hidden",
-    maxHeight: 200
+    maxHeight: 200,
   },
   suggestionRow: {
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#E2E8F0"
+    borderBottomColor: "#E2E8F0",
   },
   suggestionRowLast: {
-    borderBottomWidth: 0
+    borderBottomWidth: 0,
   },
   suggestionPrimary: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#0F172A"
+    color: "#0F172A",
   },
   suggestionSecondary: {
     fontSize: 12,
     color: "#64748B",
-    marginTop: 2
+    marginTop: 2,
   },
   recommendationList: {
     marginTop: 8,
-    gap: 12
+    gap: 12,
   },
   recommendationItem: {
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    backgroundColor: "#FFFFFF"
+    backgroundColor: "#FFFFFF",
   },
   recommendationHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 6
+    marginBottom: 6,
   },
   recommendationName: {
     fontSize: 16,
     fontWeight: "700",
     color: "#0F172A",
     flexShrink: 1,
-    paddingRight: 8
+    paddingRight: 8,
   },
   recommendationRating: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#1D4ED8"
+    color: "#1D4ED8",
   },
   recommendationMeta: {
     fontSize: 13,
     color: "#475569",
-    marginTop: 2
-  }
+    marginTop: 2,
+  },
 });

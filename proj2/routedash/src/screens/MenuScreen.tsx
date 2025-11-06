@@ -1,9 +1,21 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import { apiFetch } from "../api/client";
-import type { CartItem, MenuItem, MenuSection, RootStackParamList } from "../navigation/types";
+import type {
+  CartItem,
+  MenuItem,
+  MenuSection,
+  RootStackParamList,
+} from "../navigation/types";
 
 type MenuResponse = {
   sections: Array<{
@@ -33,9 +45,12 @@ export const MenuScreen = ({ route, navigation }: MenuScreenProps) => {
     const loadMenu = async () => {
       try {
         setIsLoading(true);
-        const response = await apiFetch<MenuResponse>(`/api/restaurants/${restaurant.id}/menu`, {
-          requireAuth: false
-        });
+        const response = await apiFetch<MenuResponse>(
+          `/api/restaurants/${restaurant.id}/menu`,
+          {
+            requireAuth: false,
+          },
+        );
         const normalized: MenuSection[] = response.sections.map((section) => ({
           id: section.id,
           title: section.title,
@@ -47,8 +62,8 @@ export const MenuScreen = ({ route, navigation }: MenuScreenProps) => {
               description: item.description,
               priceCents: item.priceCents,
               isAvailable: item.isAvailable,
-              tags: item.tags
-            }))
+              tags: item.tags,
+            })),
         }));
         setSections(normalized);
       } catch (err) {
@@ -58,12 +73,12 @@ export const MenuScreen = ({ route, navigation }: MenuScreenProps) => {
       }
     };
 
-    void loadMenu();
+    loadMenu().catch(() => {});
   }, [restaurant.id]);
 
   const itemCount = useMemo(
     () => cart.reduce((sum, entry) => sum + entry.quantity, 0),
-    [cart]
+    [cart],
   );
 
   const addToCart = (item: MenuItem) => {
@@ -71,10 +86,20 @@ export const MenuScreen = ({ route, navigation }: MenuScreenProps) => {
       const existing = prev.find((entry) => entry.menuItemId === item.id);
       if (existing) {
         return prev.map((entry) =>
-          entry.menuItemId === item.id ? { ...entry, quantity: entry.quantity + 1 } : entry
+          entry.menuItemId === item.id
+            ? { ...entry, quantity: entry.quantity + 1 }
+            : entry,
         );
       }
-      return [...prev, { menuItemId: item.id, name: item.name, priceCents: item.priceCents, quantity: 1 }];
+      return [
+        ...prev,
+        {
+          menuItemId: item.id,
+          name: item.name,
+          priceCents: item.priceCents,
+          quantity: 1,
+        },
+      ];
     });
   };
 
@@ -98,9 +123,16 @@ export const MenuScreen = ({ route, navigation }: MenuScreenProps) => {
               {section.items.map((item) => (
                 <View key={item.id} style={styles.card}>
                   <Text style={styles.name}>{item.name}</Text>
-                  {item.description ? <Text style={styles.desc}>{item.description}</Text> : null}
-                  <Text style={styles.price}>${(item.priceCents / 100).toFixed(2)}</Text>
-                  <Pressable style={styles.addBtn} onPress={() => addToCart(item)}>
+                  {item.description ? (
+                    <Text style={styles.desc}>{item.description}</Text>
+                  ) : null}
+                  <Text style={styles.price}>
+                    ${(item.priceCents / 100).toFixed(2)}
+                  </Text>
+                  <Pressable
+                    style={styles.addBtn}
+                    onPress={() => addToCart(item)}
+                  >
                     <Text style={styles.addText}>Add to Cart</Text>
                   </Pressable>
                 </View>
@@ -126,12 +158,12 @@ const styles = StyleSheet.create({
   error: { color: "#B91C1C", marginBottom: 12 },
   listContent: { paddingBottom: 120 },
   section: {
-    marginBottom: 16
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
-    marginBottom: 8
+    marginBottom: 8,
   },
   card: {
     backgroundColor: "#FFF",
@@ -140,7 +172,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     shadowColor: "#000",
     shadowOpacity: 0.05,
-    shadowRadius: 10
+    shadowRadius: 10,
   },
   name: { fontSize: 18, fontWeight: "700" },
   desc: { color: "#475569", marginTop: 4 },
@@ -150,7 +182,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 8,
     marginTop: 8,
-    alignItems: "center"
+    alignItems: "center",
   },
   addText: { color: "#FFF", fontWeight: "600" },
   checkoutBtn: {
@@ -158,7 +190,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 10,
     alignItems: "center",
-    marginTop: 12
+    marginTop: 12,
   },
-  checkoutText: { color: "#FFF", fontWeight: "700" }
+  checkoutText: { color: "#FFF", fontWeight: "700" },
 });

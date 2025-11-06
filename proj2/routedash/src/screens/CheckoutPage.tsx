@@ -11,17 +11,26 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  View
+  View,
 } from "react-native";
 
 import { apiFetch, apiPost } from "../api/client";
 import { useAuth } from "../context/AuthContext";
-import type { CartItem, OrderStatusValue, RootStackParamList } from "../navigation/types";
+import type {
+  CartItem,
+  OrderStatusValue,
+  RootStackParamList,
+} from "../navigation/types";
 
 const TAX_RATE = 0.0825;
 
 type PaymentMethod = "card" | "apple_pay" | "arrival";
-type CardDetails = { name: string; number: string; expiry: string; cvv: string };
+type CardDetails = {
+  name: string;
+  number: string;
+  expiry: string;
+  cvv: string;
+};
 type ApplePayCard = { id: string; label: string; last4: string };
 
 type CheckoutPageProps = NativeStackScreenProps<RootStackParamList, "Checkout">;
@@ -48,16 +57,36 @@ type OrderResponse = {
   };
 };
 
-const PAYMENT_OPTIONS: Array<{ id: PaymentMethod; title: string; caption: string }> = [
-  { id: "card", title: "Credit or Debit Card", caption: "Pay securely with saved cards." },
-  { id: "apple_pay", title: "Apple Pay", caption: "Quick checkout with Apple Pay." },
-  { id: "arrival", title: "Pay on Arrival", caption: "Pay when you pick up the order." }
+const PAYMENT_OPTIONS: Array<{
+  id: PaymentMethod;
+  title: string;
+  caption: string;
+}> = [
+  {
+    id: "card",
+    title: "Credit or Debit Card",
+    caption: "Pay securely with saved cards.",
+  },
+  {
+    id: "apple_pay",
+    title: "Apple Pay",
+    caption: "Quick checkout with Apple Pay.",
+  },
+  {
+    id: "arrival",
+    title: "Pay on Arrival",
+    caption: "Pay when you pick up the order.",
+  },
 ];
 
 const formatCurrency = (cents: number) => `$${(cents / 100).toFixed(2)}`;
-const sanitizeCardNumber = (value: string) => value.replace(/\D/g, "").slice(0, 16);
+const sanitizeCardNumber = (value: string) =>
+  value.replace(/\D/g, "").slice(0, 16);
 const formatCardNumberDisplay = (digits: string) =>
-  digits.replace(/\s+/g, "").replace(/(\d{4})(?=\d)/g, "$1 ").trim();
+  digits
+    .replace(/\s+/g, "")
+    .replace(/(\d{4})(?=\d)/g, "$1 ")
+    .trim();
 const sanitizeExpiry = (value: string) => value.replace(/\D/g, "").slice(0, 4);
 const formatExpiryDisplay = (digits: string) => {
   if (!digits) {
@@ -73,7 +102,9 @@ const sanitizeCvv = (value: string) => value.replace(/\D/g, "").slice(0, 4);
 export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
   const { restaurant, trip } = route.params;
   const initialCartCount = route.params.cart?.length ?? 0;
-  const [cartItems, setCartItems] = useState<CartItem[]>(route.params.cart ?? []);
+  const [cartItems, setCartItems] = useState<CartItem[]>(
+    route.params.cart ?? [],
+  );
   const [isLoading, setIsLoading] = useState(initialCartCount === 0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -83,10 +114,12 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
     name: "",
     number: "",
     expiry: "",
-    cvv: ""
+    cvv: "",
   });
   const [showApplePaySheet, setShowApplePaySheet] = useState(false);
-  const [selectedApplePayCard, setSelectedApplePayCard] = useState<string | null>(null);
+  const [selectedApplePayCard, setSelectedApplePayCard] = useState<
+    string | null
+  >(null);
   const [applePayAuthenticated, setApplePayAuthenticated] = useState(false);
 
   const { user } = useAuth();
@@ -110,30 +143,39 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
 
   useEffect(() => {
     if (!initialCartCount) {
-      void loadCartFromApi();
+      loadCartFromApi().catch(() => {});
     } else {
       setIsLoading(false);
     }
   }, [initialCartCount, loadCartFromApi]);
 
   const subtotalCents = useMemo(
-    () => cartItems.reduce((sum, item) => sum + item.priceCents * item.quantity, 0),
-    [cartItems]
+    () =>
+      cartItems.reduce((sum, item) => sum + item.priceCents * item.quantity, 0),
+    [cartItems],
   );
-  const taxCents = useMemo(() => Math.round(subtotalCents * TAX_RATE), [subtotalCents]);
+  const taxCents = useMemo(
+    () => Math.round(subtotalCents * TAX_RATE),
+    [subtotalCents],
+  );
   const totalWithTaxCents = subtotalCents + taxCents;
 
   const applePayCards = useMemo<ApplePayCard[]>(
     () => [
       { id: "apple-card-1", label: "Personal Visa •••• 4242", last4: "4242" },
-      { id: "apple-card-2", label: "Travel Mastercard •••• 7788", last4: "7788" },
-      { id: "apple-card-3", label: "Corporate Amex •••• 3005", last4: "3005" }
+      {
+        id: "apple-card-2",
+        label: "Travel Mastercard •••• 7788",
+        last4: "7788",
+      },
+      { id: "apple-card-3", label: "Corporate Amex •••• 3005", last4: "3005" },
     ],
-    []
+    [],
   );
   const selectedAppleCard = useMemo(
-    () => applePayCards.find((card) => card.id === selectedApplePayCard) ?? null,
-    [applePayCards, selectedApplePayCard]
+    () =>
+      applePayCards.find((card) => card.id === selectedApplePayCard) ?? null,
+    [applePayCards, selectedApplePayCard],
   );
 
   const isCardDetailsValid = useMemo(() => {
@@ -158,7 +200,13 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
       return Boolean(selectedApplePayCard) && applePayAuthenticated;
     }
     return true;
-  }, [applePayAuthenticated, cartItems.length, isCardDetailsValid, paymentMethod, selectedApplePayCard]);
+  }, [
+    applePayAuthenticated,
+    cartItems.length,
+    isCardDetailsValid,
+    paymentMethod,
+    selectedApplePayCard,
+  ]);
 
   const openApplePaySheet = useCallback(() => {
     setShowApplePaySheet(true);
@@ -185,7 +233,7 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
         .map((item) =>
           item.menuItemId === menuItemId
             ? { ...item, quantity: Math.max(item.quantity + delta, 0) }
-            : item
+            : item,
         )
         .filter((item) => item.quantity > 0);
       return next;
@@ -193,7 +241,9 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
   };
 
   const removeItem = (menuItemId: string) => {
-    setCartItems((prev) => prev.filter((item) => item.menuItemId !== menuItemId));
+    setCartItems((prev) =>
+      prev.filter((item) => item.menuItemId !== menuItemId),
+    );
   };
 
   const handlePlaceOrder = async () => {
@@ -211,16 +261,16 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
               method: "card",
               cardholderName: cardDetails.name.trim(),
               last4: sanitizeCardNumber(cardDetails.number).slice(-4),
-              expiry: formatExpiryDisplay(sanitizeExpiry(cardDetails.expiry))
+              expiry: formatExpiryDisplay(sanitizeExpiry(cardDetails.expiry)),
             }
           : paymentMethod === "apple_pay"
-            ? {
-                method: "apple_pay",
-                wallet: "Apple Pay",
-                last4: selectedAppleCard?.last4 ?? "",
-                token: `apple-pay-${selectedAppleCard?.id ?? "token"}`
-              }
-            : { method: "arrival" };
+          ? {
+              method: "apple_pay",
+              wallet: "Apple Pay",
+              last4: selectedAppleCard?.last4 ?? "",
+              token: `apple-pay-${selectedAppleCard?.id ?? "token"}`,
+            }
+          : { method: "arrival" };
 
       const payload = {
         userId: user?.id,
@@ -228,14 +278,14 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
         items: cartItems.map((item) => ({
           menuItemId: item.menuItemId,
           quantity: item.quantity,
-          priceCents: item.priceCents
+          priceCents: item.priceCents,
         })),
         total: totalWithTaxCents / 100,
         paymentMethod,
         pickupEtaMin: trip.pickupEtaMin,
         routeOrigin: trip.origin,
         routeDestination: trip.destination,
-        paymentDetails
+        paymentDetails,
       };
 
       const response = await apiPost<OrderResponse>("/api/orders", payload);
@@ -254,16 +304,19 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
           ...item,
           name:
             item.menuItem?.name ??
-            cartItems.find((entry) => entry.menuItemId === item.menuItemId)?.name ??
-            "Item"
-        }))
+            cartItems.find((entry) => entry.menuItemId === item.menuItemId)
+              ?.name ??
+            "Item",
+        })),
       };
 
       navigation.replace("OrderStatus", {
-        order: nextOrder
+        order: nextOrder,
       });
     } catch (error) {
-      setSubmitError((error as Error).message || "Unable to place order. Please try again.");
+      setSubmitError(
+        (error as Error).message || "Unable to place order. Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -283,7 +336,9 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
       return (
         <View style={styles.emptyState}>
           <Text style={styles.emptyTitle}>Your cart is empty</Text>
-          <Text style={styles.emptyCaption}>Add something delicious from the menu to continue.</Text>
+          <Text style={styles.emptyCaption}>
+            Add something delicious from the menu to continue.
+          </Text>
           {fetchError ? (
             <Pressable style={styles.retryBtn} onPress={loadCartFromApi}>
               <Text style={styles.retryText}>Retry</Text>
@@ -298,7 +353,9 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
         <View style={styles.cartRow}>
           <View style={styles.itemDetails}>
             <Text style={styles.itemName}>{item.name}</Text>
-            <Text style={styles.itemPrice}>{formatCurrency(item.priceCents)}</Text>
+            <Text style={styles.itemPrice}>
+              {formatCurrency(item.priceCents)}
+            </Text>
           </View>
           <View style={styles.quantityGroup}>
             <Pressable
@@ -318,7 +375,10 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
             </Pressable>
           </View>
         </View>
-        <Pressable style={styles.removeBtn} onPress={() => removeItem(item.menuItemId)}>
+        <Pressable
+          style={styles.removeBtn}
+          onPress={() => removeItem(item.menuItemId)}
+        >
           <Text style={styles.removeText}>Remove</Text>
         </Pressable>
       </View>
@@ -353,15 +413,21 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
             <Text style={styles.sectionLabel}>Order Summary</Text>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Subtotal</Text>
-              <Text style={styles.summaryValue}>{formatCurrency(subtotalCents)}</Text>
+              <Text style={styles.summaryValue}>
+                {formatCurrency(subtotalCents)}
+              </Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Tax</Text>
-              <Text style={styles.summaryValue}>{formatCurrency(taxCents)}</Text>
+              <Text style={styles.summaryValue}>
+                {formatCurrency(taxCents)}
+              </Text>
             </View>
             <View style={[styles.summaryRow, styles.summaryTotalRow]}>
               <Text style={styles.summaryTotal}>Total</Text>
-            <Text style={styles.summaryTotal}>{formatCurrency(totalWithTaxCents)}</Text>
+              <Text style={styles.summaryTotal}>
+                {formatCurrency(totalWithTaxCents)}
+              </Text>
             </View>
           </View>
 
@@ -372,14 +438,17 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
               return (
                 <Pressable
                   key={option.id}
-                  style={[styles.paymentOption, isSelected && styles.paymentOptionSelected]}
+                  style={[
+                    styles.paymentOption,
+                    isSelected && styles.paymentOptionSelected,
+                  ]}
                   onPress={() => setPaymentMethod(option.id)}
                 >
                   <View style={styles.paymentIndicatorOuter}>
                     <View
                       style={[
                         styles.paymentIndicatorInner,
-                        isSelected && styles.paymentIndicatorInnerSelected
+                        isSelected && styles.paymentIndicatorInnerSelected,
                       ]}
                     />
                   </View>
@@ -400,7 +469,7 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
                   onChangeText={(value) =>
                     setCardDetails((prev) => ({
                       ...prev,
-                      name: value
+                      name: value,
                     }))
                   }
                   placeholder="Jane Doe"
@@ -415,7 +484,7 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
                   onChangeText={(value) =>
                     setCardDetails((prev) => ({
                       ...prev,
-                      number: sanitizeCardNumber(value)
+                      number: sanitizeCardNumber(value),
                     }))
                   }
                   placeholder="1234 5678 9012 3456"
@@ -432,7 +501,7 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
                       onChangeText={(value) =>
                         setCardDetails((prev) => ({
                           ...prev,
-                          expiry: sanitizeExpiry(value)
+                          expiry: sanitizeExpiry(value),
                         }))
                       }
                       placeholder="09/28"
@@ -448,7 +517,7 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
                       onChangeText={(value) =>
                         setCardDetails((prev) => ({
                           ...prev,
-                          cvv: sanitizeCvv(value)
+                          cvv: sanitizeCvv(value),
                         }))
                       }
                       placeholder="123"
@@ -459,7 +528,9 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
                   </View>
                 </View>
                 {!isCardDetailsValid ? (
-                  <Text style={styles.cardHelpText}>Enter full card details to continue.</Text>
+                  <Text style={styles.cardHelpText}>
+                    Enter full card details to continue.
+                  </Text>
                 ) : null}
               </View>
             ) : null}
@@ -469,7 +540,9 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
                 {selectedAppleCard ? (
                   <>
                     <View style={styles.applePaySummary}>
-                      <Text style={styles.applePaySummaryText}>{selectedAppleCard.label}</Text>
+                      <Text style={styles.applePaySummaryText}>
+                        {selectedAppleCard.label}
+                      </Text>
                       <Pressable onPress={openApplePaySheet}>
                         <Text style={styles.applePayChangeBtn}>Change</Text>
                       </Pressable>
@@ -486,21 +559,33 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
                         : "Authenticate with Face ID / Touch ID to continue."}
                     </Text>
                     {!applePayAuthenticated ? (
-                      <Pressable style={styles.applePayTriggerBtn} onPress={openApplePaySheet}>
-                        <Text style={styles.applePayTriggerText}>Authenticate with Apple Pay</Text>
+                      <Pressable
+                        style={styles.applePayTriggerBtn}
+                        onPress={openApplePaySheet}
+                      >
+                        <Text style={styles.applePayTriggerText}>
+                          Authenticate with Apple Pay
+                        </Text>
                       </Pressable>
                     ) : null}
                   </>
                 ) : (
-                  <Pressable style={styles.applePayTriggerBtn} onPress={openApplePaySheet}>
-                    <Text style={styles.applePayTriggerText}>Choose Apple Pay Card</Text>
+                  <Pressable
+                    style={styles.applePayTriggerBtn}
+                    onPress={openApplePaySheet}
+                  >
+                    <Text style={styles.applePayTriggerText}>
+                      Choose Apple Pay Card
+                    </Text>
                   </Pressable>
                 )}
               </View>
             ) : null}
           </View>
 
-          {submitError ? <Text style={styles.submitError}>{submitError}</Text> : null}
+          {submitError ? (
+            <Text style={styles.submitError}>{submitError}</Text>
+          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -508,7 +593,7 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
         <Pressable
           style={[
             styles.placeOrderBtn,
-            (!isPaymentReady || isSubmitting) && styles.placeOrderBtnDisabled
+            (!isPaymentReady || isSubmitting) && styles.placeOrderBtnDisabled,
           ]}
           onPress={handlePlaceOrder}
           disabled={!isPaymentReady || isSubmitting}
@@ -532,21 +617,28 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Apple Pay</Text>
-            <Text style={styles.modalCaption}>Select a card to authenticate your payment.</Text>
+            <Text style={styles.modalCaption}>
+              Select a card to authenticate your payment.
+            </Text>
 
             {applePayCards.map((card) => {
               const isSelected = card.id === selectedApplePayCard;
               return (
                 <Pressable
                   key={card.id}
-                  style={[styles.modalOption, isSelected && styles.modalOptionSelected]}
+                  style={[
+                    styles.modalOption,
+                    isSelected && styles.modalOptionSelected,
+                  ]}
                   onPress={() => {
                     setSelectedApplePayCard(card.id);
                     setApplePayAuthenticated(false);
                   }}
                 >
                   <Text style={styles.modalOptionText}>{card.label}</Text>
-                  {isSelected ? <Text style={styles.modalOptionBadge}>Selected</Text> : null}
+                  {isSelected ? (
+                    <Text style={styles.modalOptionBadge}>Selected</Text>
+                  ) : null}
                 </Pressable>
               );
             })}
@@ -554,7 +646,7 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
             <Pressable
               style={[
                 styles.modalPrimaryBtn,
-                !selectedApplePayCard && styles.modalPrimaryBtnDisabled
+                !selectedApplePayCard && styles.modalPrimaryBtnDisabled,
               ]}
               disabled={!selectedApplePayCard}
               onPress={() => {
@@ -563,12 +655,20 @@ export const CheckoutPage = ({ route, navigation }: CheckoutPageProps) => {
                 }
                 setApplePayAuthenticated(true);
                 setShowApplePaySheet(false);
-                Alert.alert("Apple Pay", `Authenticated with card ending ${selectedAppleCard.last4}.`);
+                Alert.alert(
+                  "Apple Pay",
+                  `Authenticated with card ending ${selectedAppleCard.last4}.`,
+                );
               }}
             >
-              <Text style={styles.modalPrimaryText}>Authenticate & Continue</Text>
+              <Text style={styles.modalPrimaryText}>
+                Authenticate & Continue
+              </Text>
             </Pressable>
-            <Pressable style={styles.modalSecondaryBtn} onPress={() => setShowApplePaySheet(false)}>
+            <Pressable
+              style={styles.modalSecondaryBtn}
+              onPress={() => setShowApplePaySheet(false)}
+            >
               <Text style={styles.modalSecondaryText}>Cancel</Text>
             </Pressable>
           </View>
@@ -582,14 +682,24 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   container: { flex: 1, backgroundColor: "#F8FAFC" },
   scrollContent: { padding: 16, paddingBottom: 200 },
-  header: { fontSize: 24, fontWeight: "700", marginBottom: 12, color: "#0F172A" },
-  sectionLabel: { fontSize: 18, fontWeight: "600", marginBottom: 12, color: "#1E293B" },
+  header: {
+    fontSize: 24,
+    fontWeight: "700",
+    marginBottom: 12,
+    color: "#0F172A",
+  },
+  sectionLabel: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 12,
+    color: "#1E293B",
+  },
   loadingState: {
     backgroundColor: "#EFF6FF",
     borderRadius: 14,
     paddingVertical: 40,
     alignItems: "center",
-    marginBottom: 16
+    marginBottom: 16,
   },
   loadingText: { marginTop: 12, color: "#2563EB", fontWeight: "600" },
   emptyState: {
@@ -600,15 +710,20 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     shadowColor: "#000",
     shadowOpacity: 0.05,
-    shadowRadius: 10
+    shadowRadius: 10,
   },
-  emptyTitle: { fontSize: 18, fontWeight: "700", color: "#0F172A", marginBottom: 6 },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginBottom: 6,
+  },
   emptyCaption: { color: "#475569", textAlign: "center", marginBottom: 16 },
   retryBtn: {
     backgroundColor: "#2563EB",
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 999
+    borderRadius: 999,
   },
   retryText: { color: "#FFF", fontWeight: "600" },
   cartCard: {
@@ -618,12 +733,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     shadowColor: "#000",
     shadowOpacity: 0.05,
-    shadowRadius: 12
+    shadowRadius: 12,
   },
   cartRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between"
+    justifyContent: "space-between",
   },
   itemDetails: { flex: 1 },
   itemName: { fontSize: 16, fontWeight: "600", color: "#0F172A" },
@@ -634,7 +749,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#EFF6FF",
     borderRadius: 999,
     paddingHorizontal: 10,
-    paddingVertical: 6
+    paddingVertical: 6,
   },
   qtyBtn: {
     width: 28,
@@ -642,7 +757,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#1D4ED8"
+    backgroundColor: "#1D4ED8",
   },
   qtySymbol: { color: "#FFF", fontWeight: "700", fontSize: 16 },
   qtyValue: { marginHorizontal: 10, fontWeight: "600", color: "#0F172A" },
@@ -652,7 +767,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: "#FEE2E2"
+    backgroundColor: "#FEE2E2",
   },
   removeText: { color: "#B91C1C", fontWeight: "600" },
   summaryCard: {
@@ -663,17 +778,22 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     shadowColor: "#000",
     shadowOpacity: 0.05,
-    shadowRadius: 12
+    shadowRadius: 12,
   },
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8
+    marginBottom: 8,
   },
   summaryLabel: { color: "#475569" },
   summaryValue: { color: "#0F172A", fontWeight: "600" },
-  summaryTotalRow: { marginTop: 8, borderTopWidth: 1, borderTopColor: "#E2E8F0", paddingTop: 12 },
+  summaryTotalRow: {
+    marginTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#E2E8F0",
+    paddingTop: 12,
+  },
   summaryTotal: { fontSize: 18, fontWeight: "700", color: "#0F172A" },
   paymentCard: {
     backgroundColor: "#FFF",
@@ -681,7 +801,7 @@ const styles = StyleSheet.create({
     padding: 16,
     shadowColor: "#000",
     shadowOpacity: 0.05,
-    shadowRadius: 12
+    shadowRadius: 12,
   },
   paymentOption: {
     flexDirection: "row",
@@ -691,11 +811,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E2E8F0",
     borderRadius: 12,
-    marginBottom: 10
+    marginBottom: 10,
   },
   paymentOptionSelected: {
     borderColor: "#2563EB",
-    backgroundColor: "#EFF6FF"
+    backgroundColor: "#EFF6FF",
   },
   paymentIndicatorOuter: {
     width: 22,
@@ -705,16 +825,16 @@ const styles = StyleSheet.create({
     borderColor: "#CBD5F5",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12
+    marginRight: 12,
   },
   paymentIndicatorInner: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: "transparent"
+    backgroundColor: "transparent",
   },
   paymentIndicatorInnerSelected: {
-    backgroundColor: "#1D4ED8"
+    backgroundColor: "#1D4ED8",
   },
   paymentCopy: { flex: 1 },
   paymentTitle: { fontSize: 16, fontWeight: "600", color: "#0F172A" },
@@ -727,7 +847,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginBottom: 12,
-    color: "#0F172A"
+    color: "#0F172A",
   },
   expiryCvvRow: { flexDirection: "row" },
   expiryField: { flex: 1, marginRight: 12 },
@@ -737,12 +857,12 @@ const styles = StyleSheet.create({
     marginTop: 12,
     backgroundColor: "#F1F5F9",
     borderRadius: 12,
-    padding: 16
+    padding: 16,
   },
   applePaySummary: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center"
+    alignItems: "center",
   },
   applePaySummaryText: { fontWeight: "600", color: "#0F172A" },
   applePayChangeBtn: { color: "#1D4ED8", fontWeight: "600" },
@@ -751,7 +871,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: "center",
-    marginTop: 12
+    marginTop: 12,
   },
   applePayTriggerText: { color: "#FFF", fontWeight: "600" },
   applePayAuthStatus: { color: "#15803D", fontWeight: "600", marginTop: 12 },
@@ -763,11 +883,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center"
+    alignItems: "center",
   },
   errorText: { color: "#B91C1C", flex: 1, marginRight: 12 },
   retryLink: { color: "#1D4ED8", fontWeight: "600" },
-  submitError: { color: "#B91C1C", marginTop: 16, textAlign: "center", fontWeight: "600" },
+  submitError: {
+    color: "#B91C1C",
+    marginTop: 16,
+    textAlign: "center",
+    fontWeight: "600",
+  },
   footer: {
     position: "absolute",
     bottom: 0,
@@ -776,7 +901,7 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: "#F8FAFC",
     borderTopWidth: 1,
-    borderColor: "#E2E8F0"
+    borderColor: "#E2E8F0",
   },
   placeOrderBtn: {
     backgroundColor: "#16A34A",
@@ -786,20 +911,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     shadowColor: "#000",
     shadowOpacity: 0.08,
-    shadowRadius: 12
+    shadowRadius: 12,
   },
   placeOrderBtnDisabled: { opacity: 0.6 },
   placeOrderText: { color: "#FFF", fontWeight: "700", fontSize: 16 },
   modalBackdrop: {
     flex: 1,
     backgroundColor: "rgba(15, 23, 42, 0.5)",
-    justifyContent: "flex-end"
+    justifyContent: "flex-end",
   },
   modalContent: {
     backgroundColor: "#FFF",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 20
+    padding: 20,
   },
   modalTitle: { fontSize: 20, fontWeight: "700", color: "#0F172A" },
   modalCaption: { color: "#475569", marginTop: 8 },
@@ -812,11 +937,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 12
+    marginTop: 12,
   },
   modalOptionSelected: {
     borderColor: "#2563EB",
-    backgroundColor: "#EFF6FF"
+    backgroundColor: "#EFF6FF",
   },
   modalOptionText: { color: "#0F172A", fontWeight: "600" },
   modalOptionBadge: { color: "#2563EB", fontWeight: "700" },
@@ -825,14 +950,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
-    marginTop: 20
+    marginTop: 20,
   },
   modalPrimaryBtnDisabled: { opacity: 0.5 },
   modalPrimaryText: { color: "#FFF", fontWeight: "700" },
   modalSecondaryBtn: {
     paddingVertical: 12,
     alignItems: "center",
-    marginTop: 12
+    marginTop: 12,
   },
-  modalSecondaryText: { color: "#1D4ED8", fontWeight: "600" }
+  modalSecondaryText: { color: "#1D4ED8", fontWeight: "600" },
 });

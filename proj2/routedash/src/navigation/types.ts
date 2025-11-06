@@ -34,7 +34,12 @@ export type CartItem = {
   quantity: number;
 };
 
-export type OrderStatusValue = "PENDING" | "PREPARING" | "READY" | "COMPLETED" | "CANCELED";
+export type OrderStatusValue =
+  | "PENDING"
+  | "PREPARING"
+  | "READY"
+  | "COMPLETED"
+  | "CANCELED";
 
 export type OrderSummary = {
   id: string;
@@ -43,7 +48,13 @@ export type OrderSummary = {
   pickupEtaMin: number;
   routeOrigin: string;
   routeDestination: string;
-  items: Array<{ id: string; menuItemId: string; quantity: number; priceCents: number; name?: string }>;
+  items: Array<{
+    id: string;
+    menuItemId: string;
+    quantity: number;
+    priceCents: number;
+    name?: string;
+  }>;
   restaurant: RestaurantSummary;
   subtotalCents?: number;
   taxCents?: number;
@@ -54,7 +65,11 @@ export type RootStackParamList = {
   Planner: undefined;
   Restaurants: { trip: TripContext };
   Menu: { restaurant: RestaurantSummary; trip: TripContext };
-  Checkout: { cart: CartItem[]; restaurant: RestaurantSummary; trip: TripContext };
+  Checkout: {
+    cart: CartItem[];
+    restaurant: RestaurantSummary;
+    trip: TripContext;
+  };
   OrderStatus: { order: OrderSummary };
   MerchantDashboard: undefined;
 };

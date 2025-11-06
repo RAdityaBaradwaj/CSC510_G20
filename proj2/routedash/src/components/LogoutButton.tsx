@@ -1,3 +1,4 @@
+import React from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 
 import { useAuth } from "../context/AuthContext";
@@ -15,10 +16,10 @@ export const LogoutButton = () => {
 const styles = StyleSheet.create({
   button: {
     paddingHorizontal: 12,
-    paddingVertical: 6
+    paddingVertical: 6,
   },
   text: {
     color: "#2563EB",
-    fontWeight: "600"
-  }
+    fontWeight: "600",
+  },
 });

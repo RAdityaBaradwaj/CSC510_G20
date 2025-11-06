@@ -1,3 +1,5 @@
+/* eslint-disable no-bitwise */
+
 export type Coordinate = {
   latitude: number;
   longitude: number;
@@ -41,9 +43,11 @@ export const decodePolyline = (encoded: string): Coordinate[] => {
 
     coordinates.push({
       latitude: latitude / 1e5,
-      longitude: longitude / 1e5
+      longitude: longitude / 1e5,
     });
   }
 
   return coordinates;
 };
+
+/* eslint-enable no-bitwise */

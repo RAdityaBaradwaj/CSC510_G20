@@ -3,9 +3,16 @@ import React, { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { apiFetch } from "../api/client";
-import type { OrderSummary, OrderStatusValue, RootStackParamList } from "../navigation/types";
+import type {
+  OrderSummary,
+  OrderStatusValue,
+  RootStackParamList,
+} from "../navigation/types";
 
-type OrderStatusScreenProps = NativeStackScreenProps<RootStackParamList, "OrderStatus">;
+type OrderStatusScreenProps = NativeStackScreenProps<
+  RootStackParamList,
+  "OrderStatus"
+>;
 
 type ApiOrderResponse = {
   order: Omit<OrderSummary, "items"> & {
@@ -25,7 +32,7 @@ const STATUS_MESSAGES: Record<OrderStatusValue, string> = {
   PREPARING: "Cooking your meal…",
   READY: "Packing and ready for pickup!",
   COMPLETED: "Order completed. Enjoy your meal!",
-  CANCELED: "The restaurant canceled this order."
+  CANCELED: "The restaurant canceled this order.",
 };
 
 const STATUS_LABELS: Record<OrderStatusValue, string> = {
@@ -33,7 +40,7 @@ const STATUS_LABELS: Record<OrderStatusValue, string> = {
   PREPARING: "Processing",
   READY: "Ready",
   COMPLETED: "Done",
-  CANCELED: "Canceled"
+  CANCELED: "Canceled",
 };
 
 const STATUS_PROGRESS: Record<OrderStatusValue, number> = {
@@ -41,7 +48,7 @@ const STATUS_PROGRESS: Record<OrderStatusValue, number> = {
   PREPARING: 1,
   READY: 2,
   COMPLETED: 2,
-  CANCELED: 0
+  CANCELED: 0,
 };
 
 const FINAL_STATUSES: OrderStatusValue[] = ["COMPLETED", "CANCELED"];
@@ -51,7 +58,7 @@ const STATUS_CHIP_KEYS = {
   PREPARING: "statusChipPREPARING",
   READY: "statusChipREADY",
   COMPLETED: "statusChipCOMPLETED",
-  CANCELED: "statusChipCANCELED"
+  CANCELED: "statusChipCANCELED",
 } as const;
 
 const formatCurrency = (cents: number) => `$${(cents / 100).toFixed(2)}`;
@@ -73,7 +80,9 @@ export const OrderStatusScreen = ({ route }: OrderStatusScreenProps) => {
 
     const fetchOrder = async () => {
       try {
-        const response = await apiFetch<ApiOrderResponse>(`/api/orders/${initialOrderRef.current.id}`);
+        const response = await apiFetch<ApiOrderResponse>(
+          `/api/orders/${initialOrderRef.current.id}`,
+        );
 
         if (!isMounted) {
           return;
@@ -88,16 +97,18 @@ export const OrderStatusScreen = ({ route }: OrderStatusScreenProps) => {
             ...next,
             restaurant: {
               ...fallback.restaurant,
-              ...next.restaurant
+              ...next.restaurant,
             },
             items: next.items.map((item) => ({
               ...item,
               name:
                 item.name ??
                 item.menuItem?.name ??
-                fallback.items.find((existing) => existing.menuItemId === item.menuItemId)?.name ??
-                "Item"
-            }))
+                fallback.items.find(
+                  (existing) => existing.menuItemId === item.menuItemId,
+                )?.name ??
+                "Item",
+            })),
           };
         });
         setError(null);
@@ -113,7 +124,7 @@ export const OrderStatusScreen = ({ route }: OrderStatusScreenProps) => {
       }
     };
 
-    void fetchOrder();
+    fetchOrder().catch(() => {});
     pollId = setInterval(fetchOrder, 5000);
 
     return () => {
@@ -127,7 +138,8 @@ export const OrderStatusScreen = ({ route }: OrderStatusScreenProps) => {
   const subtotalCents =
     order.subtotalCents ??
     order.items.reduce((sum, item) => sum + item.priceCents * item.quantity, 0);
-  const inferredTax = order.taxCents ?? Math.max(order.totalCents - subtotalCents, 0);
+  const inferredTax =
+    order.taxCents ?? Math.max(order.totalCents - subtotalCents, 0);
   const totalCents = order.totalCents ?? subtotalCents + inferredTax;
 
   const statusMessage = STATUS_MESSAGES[order.status];
@@ -135,7 +147,9 @@ export const OrderStatusScreen = ({ route }: OrderStatusScreenProps) => {
   const step = STATUS_PROGRESS[order.status];
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Order #{order.id.slice(0, 6).toUpperCase()}</Text>
+      <Text style={styles.header}>
+        Order #{order.id.slice(0, 6).toUpperCase()}
+      </Text>
       <Text style={styles.sub}>Restaurant: {order.restaurant.name}</Text>
       <Text style={styles.sub}>Pickup ETA: {order.pickupEtaMin} min</Text>
       <Text style={styles.sub}>
@@ -145,12 +159,16 @@ export const OrderStatusScreen = ({ route }: OrderStatusScreenProps) => {
       <View style={styles.statusBox}>
         <View style={styles.statusHeader}>
           <Text style={styles.status}>{statusMessage}</Text>
-          <View style={[styles.statusChip, styles[STATUS_CHIP_KEYS[order.status]]]}>
+          <View
+            style={[styles.statusChip, styles[STATUS_CHIP_KEYS[order.status]]]}
+          >
             <Text style={styles.statusChipText}>{statusLabel}</Text>
           </View>
         </View>
         {order.status !== "CANCELED" ? (
-          <Text style={styles.statusStep}>Step {Math.min(step + 1, 3)} of 3</Text>
+          <Text style={styles.statusStep}>
+            Step {Math.min(step + 1, 3)} of 3
+          </Text>
         ) : null}
       </View>
       <View style={styles.orderCard}>
@@ -160,13 +178,17 @@ export const OrderStatusScreen = ({ route }: OrderStatusScreenProps) => {
             <Text style={styles.itemName}>
               {item.quantity} × {item.name ?? "Menu item"}
             </Text>
-            <Text style={styles.itemPrice}>{formatCurrency(item.priceCents * item.quantity)}</Text>
+            <Text style={styles.itemPrice}>
+              {formatCurrency(item.priceCents * item.quantity)}
+            </Text>
           </View>
         ))}
         <View style={styles.divider} />
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Subtotal</Text>
-          <Text style={styles.summaryValue}>{formatCurrency(subtotalCents)}</Text>
+          <Text style={styles.summaryValue}>
+            {formatCurrency(subtotalCents)}
+          </Text>
         </View>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Tax</Text>
@@ -186,7 +208,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F8FAFC"
+    backgroundColor: "#F8FAFC",
   },
   header: { fontSize: 24, fontWeight: "700", marginBottom: 8 },
   sub: { fontSize: 16, color: "#475569", marginBottom: 4 },
@@ -197,19 +219,19 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     width: "85%",
     alignSelf: "center",
-    gap: 8
+    gap: 8,
   },
   statusHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center"
+    alignItems: "center",
   },
   status: { flex: 1, fontSize: 18, color: "#0F172A", fontWeight: "700" },
   statusStep: { color: "#475569", fontWeight: "600" },
   statusChip: {
     paddingVertical: 4,
     paddingHorizontal: 12,
-    borderRadius: 999
+    borderRadius: 999,
   },
   statusChipPENDING: { backgroundColor: "#DBEAFE" },
   statusChipPREPARING: { backgroundColor: "#FDE68A" },
@@ -225,28 +247,28 @@ const styles = StyleSheet.create({
     marginTop: 24,
     shadowColor: "#000",
     shadowOpacity: 0.05,
-    shadowRadius: 10
+    shadowRadius: 10,
   },
   sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 8 },
   itemRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 6
+    marginBottom: 6,
   },
   itemName: { color: "#0F172A" },
   itemPrice: { fontWeight: "600", color: "#2563EB" },
   divider: {
     height: 1,
     backgroundColor: "#E2E8F0",
-    marginVertical: 10
+    marginVertical: 10,
   },
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 6
+    marginBottom: 6,
   },
   summaryLabel: { color: "#475569" },
   summaryValue: { color: "#0F172A", fontWeight: "600" },
   summaryTotalRow: { marginTop: 6 },
-  summaryTotal: { fontWeight: "700", color: "#0F172A" }
+  summaryTotal: { fontWeight: "700", color: "#0F172A" },
 });
