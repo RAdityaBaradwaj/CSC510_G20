@@ -217,6 +217,7 @@ export const MerchantDashboardScreen = () => {
           {!isOrdersLoading && orders.length === 0 ? <Text style={styles.meta}>No orders yet</Text> : null}
           {orders.map((order) => {
             const actions = ORDER_ACTIONS[order.status] ?? [];
+            const createdLabel = new Date(order.createdAt).toLocaleString();
             return (
               <View key={order.id} style={styles.card}>
                 <View style={styles.orderHeader}>
@@ -226,6 +227,7 @@ export const MerchantDashboardScreen = () => {
                   </View>
                 </View>
                 <Text style={styles.meta}>Customer: {order.customer.name}</Text>
+                <Text style={styles.meta}>Placed: {createdLabel}</Text>
                 <Text style={styles.meta}>
                   Route: {order.routeOrigin} → {order.routeDestination}
                 </Text>
@@ -315,10 +317,10 @@ export const MerchantDashboardScreen = () => {
               )}
               ListEmptyComponent={<Text style={styles.meta}>No sections yet</Text>}
             />
-            <Pressable style={styles.primaryBtn} onPress={handleAddItem}>
-              <Text style={styles.primaryBtnText}>Add Item</Text>
-            </Pressable>
-          </View>
+        <Pressable style={[styles.primaryBtn, styles.addItemBtn]} onPress={handleAddItem}>
+          <Text style={styles.primaryBtnText}>Add Item</Text>
+        </Pressable>
+      </View>
 
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Menu</Text>
@@ -411,6 +413,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: "center"
+  },
+  addItemBtn: {
+    marginTop: 12
   },
   primaryBtnText: { color: "#FFF", fontWeight: "700" },
   logoutBtn: {
