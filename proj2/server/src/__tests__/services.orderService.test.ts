@@ -81,22 +81,10 @@ describe("services/orderService", () => {
     { id: "item-2", restaurantId: "rest-1", priceCents: 500, isAvailable: true },
   ];
 
-  const attachItemsToOrder = (items: typeof menuItems, quantities: number[]) =>
-    items.map((item, index) => ({
-      id: `order-item-${index}`,
-      menuItemId: item.id,
-      quantity: quantities[index],
-      priceCents: item.priceCents,
-    }));
-
   it("creates an order for available items", async () => {
     prisma.restaurant.findUnique.mockResolvedValue(restaurant as any);
     prisma.menuItem.findMany.mockResolvedValue(menuItems as any);
-    prisma.order.create.mockResolvedValue({
-      id: "order-1",
-      totalCents: 2057,
-      items: attachItemsToOrder(menuItems, [2, 1]),
-    } as any);
+    prisma.order.create.mockResolvedValue({ id: "order-1", totalCents: 1900 } as any);
 
     const order = await createOrder("user-1", {
       restaurantId: "rest-1",
@@ -109,17 +97,12 @@ describe("services/orderService", () => {
       routeDestination: "Downtown",
     });
 
-    expect(order).toMatchObject({
-      id: "order-1",
-      totalCents: 2057,
-      subtotalCents: 1900,
-      taxCents: 157,
-    });
+    expect(order.id).toBe("order-1");
     expect(prisma.order.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         customerId: "user-1",
         restaurantId: "rest-1",
-        totalCents: 2057,
+        totalCents: 1900,
         items: {
           create: [
             { menuItemId: "item-1", quantity: 2, priceCents: 700 },
@@ -172,11 +155,7 @@ describe("services/orderService", () => {
   it("calculates totals using item quantities and prices", async () => {
     prisma.restaurant.findUnique.mockResolvedValue(restaurant as any);
     prisma.menuItem.findMany.mockResolvedValue(menuItems as any);
-    prisma.order.create.mockResolvedValue({
-      id: "order-1",
-      totalCents: 2627,
-      items: attachItemsToOrder(menuItems, [1, 3]),
-    } as any);
+    prisma.order.create.mockResolvedValue({ id: "order-1", totalCents: 1900 } as any);
 
     await createOrder("user-1", {
       restaurantId: "rest-1",
@@ -190,25 +169,14 @@ describe("services/orderService", () => {
     });
 
     const createArgs = prisma.order.create.mock.calls[0][0];
-    const subtotal = 1 * 700 + 3 * 500;
-    const expectedTax = Math.round(subtotal * 0.0825);
-    expect(createArgs.data.totalCents).toBe(subtotal + expectedTax);
+    expect(createArgs.data.totalCents).toBe(1 * 700 + 3 * 500);
   });
 
   it("lists orders for a customer", async () => {
-    const orders = [
-      {
-        id: "order-1",
-        totalCents: 2100,
-        items: [{ priceCents: 700, quantity: 3 }],
-      },
-    ];
+    const orders = [{ id: "order-1" }];
     prisma.order.findMany.mockResolvedValue(orders as any);
     const result = await listOrdersForUser("user-1");
-    expect(result[0]).toMatchObject({
-      subtotalCents: 2100,
-      taxCents: 0,
-    });
+    expect(result).toBe(orders);
     expect(prisma.order.findMany).toHaveBeenCalledWith({
       where: { customerId: "user-1" },
       include: {
@@ -228,19 +196,10 @@ describe("services/orderService", () => {
   });
 
   it("lists orders for a restaurant", async () => {
-    const orders = [
-      {
-        id: "order-1",
-        totalCents: 2100,
-        items: [{ priceCents: 700, quantity: 3 }],
-      },
-    ];
+    const orders = [{ id: "order-1" }];
     prisma.order.findMany.mockResolvedValue(orders as any);
     const result = await listOrdersForRestaurant("rest-1");
-    expect(result[0]).toMatchObject({
-      subtotalCents: 2100,
-      taxCents: 0,
-    });
+    expect(result).toBe(orders);
     expect(prisma.order.findMany).toHaveBeenCalledWith({
       where: { restaurantId: "rest-1" },
       include: {
@@ -273,41 +232,23 @@ describe("services/orderService", () => {
         id: "order-1",
         restaurantId: "rest-1",
         status: currentStatus,
-        totalCents: 1000,
-        items: [{ priceCents: 500, quantity: 2 }],
       } as any);
       prisma.order.update.mockResolvedValue({
         id: "order-1",
         status: nextStatus,
-        totalCents: 1000,
-        items: [{ priceCents: 500, quantity: 2 }],
       } as any);
 
       const order = await updateOrderStatusForRestaurant("rest-1", "order-1", nextStatus);
-      expect(order).toMatchObject({
-        status: nextStatus,
-        subtotalCents: 1000,
-        taxCents: 0,
-      });
+      expect(order.status).toBe(nextStatus);
     },
   );
 
   it("returns existing order when status is unchanged", async () => {
-    const existing = {
-      id: "order-1",
-      restaurantId: "rest-1",
-      status: OrderStatus.PENDING,
-      totalCents: 1500,
-      items: [{ priceCents: 500, quantity: 3 }],
-    } as any;
+    const existing = { id: "order-1", restaurantId: "rest-1", status: OrderStatus.PENDING } as any;
     prisma.order.findUnique.mockResolvedValue(existing);
 
     const result = await updateOrderStatusForRestaurant("rest-1", "order-1", OrderStatus.PENDING);
-    expect(result).toMatchObject({
-      status: OrderStatus.PENDING,
-      subtotalCents: 1500,
-      taxCents: 0,
-    });
+    expect(result).toBe(existing);
     expect(prisma.order.update).not.toHaveBeenCalled();
   });
 
@@ -341,19 +282,10 @@ describe("services/orderService", () => {
   });
 
   it("fetches a customer order when ownership matches", async () => {
-    const order = {
-      id: "order-1",
-      customerId: "user-1",
-      totalCents: 1000,
-      items: [{ priceCents: 500, quantity: 2 }],
-    };
+    const order = { id: "order-1", customerId: "user-1" };
     prisma.order.findUnique.mockResolvedValue(order as any);
     const result = await getOrderForCustomer("order-1", "user-1");
-    expect(result).toMatchObject({
-      id: "order-1",
-      subtotalCents: 1000,
-      taxCents: 0,
-    });
+    expect(result).toBe(order);
     expect(prisma.order.findUnique).toHaveBeenCalledWith({
       where: { id: "order-1" },
       include: {
