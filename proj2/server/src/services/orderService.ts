@@ -21,7 +21,9 @@ const TAX_RATE = 0.0825;
 const calculateSubtotal = (items: Array<{ priceCents: number; quantity: number }>) =>
   items.reduce((total, item) => total + item.priceCents * item.quantity, 0);
 
-const attachFinancials = <T extends { totalCents: number; items: Array<{ priceCents: number; quantity: number }> }>(
+const attachFinancials = <
+  T extends { totalCents: number; items: Array<{ priceCents: number; quantity: number }> },
+>(
   order: T,
   overrides?: { subtotalCents: number; taxCents: number },
 ) => {
