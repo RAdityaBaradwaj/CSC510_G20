@@ -1,0 +1,174 @@
+.orders-page {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.orders-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.orders-header h1 {
+  margin: 0;
+  color: #333;
+}
+
+.status-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-filter label {
+  font-weight: 600;
+  color: #555;
+}
+
+.status-filter select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+}
+
+.status-filter select:focus {
+  outline: none;
+  border-color: #681a75;
+}
+
+.loading-container,
+.error-container,
+.no-orders {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.error-container button {
+  margin-top: 15px;
+  padding: 10px 20px;
+  background: #681a75;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.error-container button:hover {
+  background: #7B1FA2;
+}
+
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.order-item {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s;
+}
+
+.order-item:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.order-id {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+}
+
+.order-status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.order-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.order-info p {
+  margin: 8px 0;
+  color: #555;
+  font-size: 14px;
+}
+
+.order-info strong {
+  color: #333;
+  margin-right: 8px;
+}
+
+.order-items {
+  margin-top: 10px;
+}
+
+.order-items ul {
+  margin: 8px 0;
+  padding-left: 20px;
+  color: #555;
+}
+
+.order-items li {
+  margin: 4px 0;
+  font-size: 14px;
+}
+
+.driver-info {
+  grid-column: 1 / -1;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.driver-info p {
+  margin: 5px 0;
+  color: #555;
+  font-size: 14px;
+}
+
+.tracking-info {
+  color: #681a75 !important;
+  font-weight: 600;
+  margin-top: 10px !important;
+}
+
+@media (max-width: 768px) {
+  .orders-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .order-details {
+    grid-template-columns: 1fr;
+  }
+}
+
