@@ -1,10 +1,9 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { useCart } from '../contexts/CartContext'
 import { useToast } from '../contexts/ToastContext'
 import { orderService } from '../services/orders/orderService'
-import { locationService } from '../services/locationService'
 import './CheckoutPage.css'
 
 export default function CheckoutPage() {
@@ -13,11 +12,66 @@ export default function CheckoutPage() {
   const { showToast } = useToast()
   const navigate = useNavigate()
   
-  const [zipCode, setZipCode] = useState('10001')
   const [address, setAddress] = useState('')
+  const [coords, setCoords] = useState({ lat: null, lng: null })
+  const [suggestions, setSuggestions] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const processingRef = useRef(new Set())
+  const addressInputRef = useRef(null)
+  const placesLoadedRef = useRef(false)
+  const autocompleteServiceRef = useRef(null)
+  const geocoderRef = useRef(null)
+
+  const handleAddressInput = (value) => {
+    if (!value || value.length < 3) {
+      setSuggestions([])
+      return
+    }
+    if (autocompleteServiceRef.current) {
+      autocompleteServiceRef.current.getPlacePredictions(
+        { input: value, types: ['address'] },
+        (preds) => setSuggestions(preds || [])
+      )
+    }
+  }
+
+  const handleSelectSuggestion = (sug) => {
+    setAddress(sug.description)
+    setSuggestions([])
+    if (geocoderRef.current && sug.place_id) {
+      geocoderRef.current.geocode({ placeId: sug.place_id }, (results, status) => {
+        if (status === 'OK' && results?.[0]?.geometry?.location) {
+          const loc = results[0].geometry.location
+          setCoords({ lat: loc.lat(), lng: loc.lng() })
+        }
+      })
+    }
+  }
+
+  useEffect(() => {
+    const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+    if (!key || placesLoadedRef.current) return
+
+    const init = () => {
+      if (window.google?.maps?.places) {
+        placesLoadedRef.current = true
+        autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService()
+        geocoderRef.current = new window.google.maps.Geocoder()
+      }
+    }
+
+    if (window.google?.maps?.places) {
+      init()
+    } else {
+      const script = document.createElement('script')
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places`
+      script.async = true
+      script.defer = true
+      script.onload = init
+      document.head.appendChild(script)
+    }
+  }, [])
 
   const handlePlaceOrder = async () => {
     if (!user) {
@@ -30,18 +84,31 @@ export default function CheckoutPage() {
       return
     }
 
-    if (!zipCode || zipCode.length !== 5) {
-      showToast('Please enter a valid 5-digit zip code', 'error')
+    if (!address.trim()) {
+      showToast('Please enter a complete street address', 'error')
       return
+    }
+
+    let location = coords
+    if (!location.lat || !location.lng) {
+      const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+      if (!key) {
+        showToast('Select an address from suggestions to capture location.', 'error')
+        return
+      }
+      try {
+        location = await geocodeAddress(address, key)
+        setCoords(location)
+      } catch (err) {
+        showToast('Unable to geocode address. Please try a different address.', 'error')
+        return
+      }
     }
 
     try {
       setLoading(true)
       setError(null)
 
-      // Get coordinates from zip code
-      const location = await locationService.getCoordinatesFromZip(zipCode)
-      
       // Create order for each business in cart
       const orderPromises = cart.map(async (businessCart) => {
         const items = businessCart.items.map(item => ({
@@ -63,11 +130,20 @@ export default function CheckoutPage() {
           businessId: businessCart.businessId,
           businessName: businessCart.businessName,
           location: {
-            zipCode: zipCode,
             lat: location.lat,
             lng: location.lng,
-            address: address || `${zipCode}`
+            address: address.trim()
           },
+          pickupLocation: businessCart.businessLocation ? {
+            lat: businessCart.businessLocation.lat,
+            lng: businessCart.businessLocation.lng,
+            address: businessCart.businessLocation.address
+          } : null,
+          businessLocation: businessCart.businessLocation ? {
+            lat: businessCart.businessLocation.lat,
+            lng: businessCart.businessLocation.lng,
+            address: businessCart.businessLocation.address
+          } : null,
           items: items,
           total: total,
           status: 'pending',
@@ -208,32 +284,39 @@ export default function CheckoutPage() {
 
         <div className="delivery-section">
           <h2>Delivery Information</h2>
-          <div className="form-group">
-            <label htmlFor="zipCode">Zip Code *</label>
-            <input
-              id="zipCode"
-              type="text"
-              value={zipCode}
-              onChange={(e) => setZipCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
-              placeholder="10001"
-              maxLength={5}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="address">Delivery Address (Optional)</label>
+          <div className="form-group" style={{ position: 'relative' }}>
+            <label htmlFor="address">Delivery Address *</label>
             <input
               id="address"
+              ref={addressInputRef}
               type="text"
               value={address}
-              onChange={(e) => setAddress(e.target.value)}
+              onChange={(e) => {
+                setAddress(e.target.value)
+                handleAddressInput(e.target.value)
+              }}
               placeholder="Street address, apartment, etc."
+              required
+              autoComplete="off"
             />
+            {suggestions.length > 0 && (
+              <div className="autocomplete-list">
+                {suggestions.map((sug, idx) => (
+                  <div
+                    key={idx}
+                    className="autocomplete-item"
+                    onClick={() => handleSelectSuggestion(sug)}
+                  >
+                    {sug.description}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <button 
             onClick={handlePlaceOrder}
-            disabled={loading || !zipCode || zipCode.length !== 5}
+            disabled={loading || !address.trim()}
             className="place-order-btn"
           >
             {loading ? 'Placing Order...' : `Place Order ($${total.toFixed(2)})`}
@@ -243,4 +326,3 @@ export default function CheckoutPage() {
     </div>
   )
 }
-

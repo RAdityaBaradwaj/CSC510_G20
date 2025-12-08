@@ -1,7 +1,7 @@
 // Admin authentication utility
 // Placeholder admin credentials for demo purposes
 
-// In production, this would check against a database or admin role in Firebase
+// In production, this would check against a database or backend role store
 const ADMIN_EMAILS = [
   'admin@neighborhoodpool.com',
   'admin@example.com'
@@ -54,4 +54,3 @@ export default {
   validateAdminCredentials,
   getAdminPlaceholderInfo
 }
-

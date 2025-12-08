@@ -39,7 +39,7 @@ NeighborhoodPool is a location-based order management system built with React an
                      │
 ┌────────────────────▼────────────────────────────────────┐
 │              External Services                          │
-│  (Firebase Auth, OpenWeather API, Future Backend)     │
+│  (OpenWeather API, future backend integrations)         │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -148,7 +148,7 @@ NeighborhoodPool is a location-based order management system built with React an
 - `RequireAuth.jsx` - Protected route wrapper
 - `RequireAdmin.jsx` - Admin-only route wrapper
 - `GlobalAuthGate.jsx` - Global auth interceptor
-- `adapters/firebaseAdapter.js` - Firebase authentication adapter
+- `adapters/localAuthAdapter.js` - Local authentication adapter (in-memory/mock)
 
 ### 6. Context Layer
 
@@ -244,7 +244,7 @@ UI Update (Admin Dashboard)
 - **Custom Hooks** - Local state management
 
 ### Backend Integration
-- **Firebase** - Authentication
+- **Local auth** - Authentication (in-memory/mock)
 - **Axios** - HTTP client (via API client)
 - **OpenWeather API** - Geocoding (via locationService)
 - **Future**: RESTful API backend
@@ -385,7 +385,7 @@ Test/
 
 ## Security Considerations
 
-- **Authentication**: Firebase Auth with role-based access
+- **Authentication**: Local mock auth with role-based access
 - **Data Validation**: Model-level validation before API calls
 - **API Security**: Future: JWT tokens, rate limiting
 

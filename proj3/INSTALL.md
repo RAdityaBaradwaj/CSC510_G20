@@ -59,7 +59,6 @@ All dependencies are listed in `package.json`:
 - Vitest
 - React Router
 - React Leaflet
-- Firebase
 - Axios
 
 ## Troubleshooting

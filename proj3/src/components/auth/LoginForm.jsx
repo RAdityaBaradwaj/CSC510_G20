@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
-import { prettyFirebaseError } from "../../auth/errorMessages";
+import { prettyAuthError } from "../../auth/errorMessages";
 
 const field = {
   width: "100%", padding: "12px 12px", borderRadius: 10,
@@ -19,7 +19,7 @@ const secondary = {
 };
 
 export default function LoginForm({ onDone }) {
-  const { login, loginWithGoogle } = useAuth();
+  const { login } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
   const [err, setErr] = useState("");
 
@@ -30,17 +30,7 @@ export default function LoginForm({ onDone }) {
       await login(form.email.trim(), form.password);
       onDone?.();
     } catch (e) {
-      setErr(prettyFirebaseError(e?.code));
-    }
-  };
-
-  const google = async () => {
-    setErr("");
-    try {
-      await loginWithGoogle();
-      onDone?.();
-    } catch (e) {
-      setErr(prettyFirebaseError(e?.code));
+      setErr(prettyAuthError(e?.code));
     }
   };
 
@@ -69,10 +59,6 @@ export default function LoginForm({ onDone }) {
       {err && <div style={{ color: "#b00020", fontSize: 13, marginBottom: 4 }}>{err}</div>}
 
       <button type="submit" style={primary}>Continue</button>
-
-      <button type="button" style={secondary} onClick={google} aria-label="Continue with Google">
-        Continue with Google
-      </button>
     </form>
   );
 }

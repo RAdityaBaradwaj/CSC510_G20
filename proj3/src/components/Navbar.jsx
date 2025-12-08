@@ -24,24 +24,33 @@ export default function Navbar() {
   const { openAuth } = useAuthUI();
   const { getCartItemCount } = useCart();
   const cartCount = getCartItemCount();
+  const adminView = isAuthed && isAdmin(user);
 
   return (
     <nav className="navbar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px" }}>
       <h1>🏘️ NeighborhoodPool</h1>
 
       <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-        <Link to="/" className={location.pathname === "/" ? "active" : ""}>Home</Link>
-        <Link to="/businesses" className={location.pathname === "/businesses" ? "active" : ""}>
-          Businesses {cartCount > 0 && `(${cartCount})`}
-        </Link>
-        {isAuthed && (
+        {adminView ? (
           <>
+            <Link to="/admin" className={location.pathname === "/admin" ? "active" : ""}>Admin</Link>
+          </>
+        ) : (
+          <>
+            <Link to="/" className={location.pathname === "/" ? "active" : ""}>Home</Link>
+            <Link to="/businesses" className={location.pathname === "/businesses" ? "active" : ""}>
+              Businesses {cartCount > 0 && `(${cartCount})`}
+            </Link>
+            {isAuthed && (
+              <>
             <Link to="/orders" className={location.pathname === "/orders" ? "active" : ""}>My Orders</Link>
             <Link to="/checkout" className={location.pathname === "/checkout" ? "active" : ""}>
               Cart {cartCount > 0 && `(${cartCount})`}
             </Link>
             {isAdmin(user) && (
-              <Link to="/admin" className={location.pathname === "/admin" ? "active" : ""}>Admin</Link>
+                  <Link to="/admin" className={location.pathname === "/admin" ? "active" : ""}>Admin</Link>
+                )}
+              </>
             )}
           </>
         )}

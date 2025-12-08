@@ -4,9 +4,11 @@ import { Batch } from '../../models/Batch'
 import { clusterOrders, optimizeRoute } from '../clustering/orderClustering'
 import { driverService } from '../drivers/driverService'
 import { orderService } from '../orders/orderService'
+import { loadBatches, saveBatches } from './storage'
+import { distanceCalculator } from '../../utils/distanceCalculator'
 
 // In-memory batch storage
-const batches = []
+const batches = loadBatches()
 
 const useMockAPI = () => {
   return import.meta.env.VITE_USE_MOCK_DATA !== 'false' || !import.meta.env.VITE_API_BASE_URL
@@ -64,6 +66,11 @@ export const batchService = {
 
     // Filter out orders that already have a driver
     const unassignedOrders = orders.filter(o => !o.driverId)
+      .filter(o => {
+        const pickup = o.pickupLocation || o.businessLocation
+        const drop = o.location || o.deliveryLocation
+        return pickup?.lat && pickup?.lng && drop?.lat && drop?.lng
+      })
 
     if (unassignedOrders.length === 0) {
       return []
@@ -77,7 +84,7 @@ export const batchService = {
     }
 
     // Cluster orders
-    const clusters = clusterOrders(unassignedOrders, drivers, maxOrdersPerBatch, maxDistanceKm)
+    const clusters = await clusterOrders(unassignedOrders, drivers, maxOrdersPerBatch, maxDistanceKm)
 
     // Create batches from clusters
     const createdBatches = []
@@ -88,13 +95,12 @@ export const batchService = {
       // Get driver details
       const driver = await driverService.getDriverById(cluster.driverId)
       
-      // Optimize route
-      const route = optimizeRoute(cluster.orders, driver.currentLocation)
+      // Optimize route starting at first pickup (business/store)
+      const startLoc = cluster.orders[0]?.pickupLocation || cluster.orders[0]?.businessLocation || cluster.orders[0]?.storeLocation || cluster.orders[0]?.location || driver.currentLocation
+      const route = optimizeRoute(cluster.orders, driver.currentLocation, startLoc)
 
-      // Calculate estimated delivery time (assume 30 km/h average speed)
-      const averageSpeedKmPerHour = 30
-      const estimatedHours = cluster.totalDistance / averageSpeedKmPerHour
-      const estimatedDeliveryTime = new Date(Date.now() + estimatedHours * 60 * 60 * 1000)
+      // Calculate total route distance based on optimized path
+      const totalDistance = computeRouteDistanceKm(route)
 
       // Create batch
       const batch = new Batch({
@@ -103,10 +109,12 @@ export const batchService = {
         driverName: cluster.driverName,
         orders: cluster.orders,
         status: 'assigned',
-        totalDistance: cluster.totalDistance,
+        totalDistance,
         route: route,
         assignedAt: new Date(),
-        estimatedDeliveryTime: estimatedDeliveryTime
+        metadata: {
+          origin: startLoc
+        }
       })
 
       // Update orders with driver assignment
@@ -117,6 +125,7 @@ export const batchService = {
       // Save batch
       if (useMockAPI()) {
         batches.push(batch.toJSON())
+        saveBatches(batches)
       } else {
         const { endpoints } = await import('../api/endpoints')
         const { api } = await import('../api/client')
@@ -175,6 +184,7 @@ export const batchService = {
       const batch = Batch.fromAPIResponse(batches[batchIndex])
       batch.updateStatus()
       batches[batchIndex] = batch.toJSON()
+      saveBatches(batches)
       
       return batch
     } else {
@@ -191,5 +201,17 @@ export const batchService = {
   }
 }
 
-export default batchService
+function computeRouteDistanceKm(route = []) {
+  if (!route || route.length < 2) return 0
+  let total = 0
+  for (let i = 1; i < route.length; i++) {
+    const prev = route[i - 1]
+    const curr = route[i]
+    if (prev?.lat && prev?.lng && curr?.lat && curr?.lng) {
+      total += distanceCalculator.calculateDistance(prev.lat, prev.lng, curr.lat, curr.lng)
+    }
+  }
+  return total
+}
 
+export default batchService

@@ -9,6 +9,7 @@ export default function BusinessesPage() {
   const [businesses, setBusinesses] = useState([])
   const [selectedBusiness, setSelectedBusiness] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [menuLoading, setMenuLoading] = useState(false)
   const [error, setError] = useState(null)
   const [addingToCart, setAddingToCart] = useState({}) // Track which items are being added
   const { addToCart } = useCart()
@@ -26,7 +27,7 @@ export default function BusinessesPage() {
     if (businessId && businesses.length > 0) {
       const business = businesses.find(b => b.id === businessId)
       if (business) {
-        setSelectedBusiness(business)
+        viewBusiness(business)
       }
     }
   }, [searchParams, businesses])
@@ -70,7 +71,16 @@ export default function BusinessesPage() {
       setAddingToCart(prev => ({ ...prev, [itemKey]: true }))
 
       // Add to cart
-      addToCart(selectedBusiness.id, selectedBusiness.name, menuItem, 1)
+      const businessLocation = selectedBusiness.location || {
+        lat: selectedBusiness.lat,
+        lng: selectedBusiness.lng,
+        address: selectedBusiness.address
+      }
+      if (!businessLocation?.lat || !businessLocation?.lng) {
+        showToast('This business is missing location data, cannot create a pickup.', 'error')
+        return
+      }
+      addToCart(selectedBusiness.id, selectedBusiness.name, menuItem, 1, businessLocation)
       showToast(`Added ${menuItem.name} to cart!`, 'success')
     } catch (err) {
       console.error('Error adding to cart:', err)
@@ -104,6 +114,21 @@ export default function BusinessesPage() {
     )
   }
 
+  const viewBusiness = async (business) => {
+    setSelectedBusiness({ ...business, menu: business.menu || [] })
+    if (!business.menu || business.menu.length === 0) {
+      try {
+        setMenuLoading(true)
+        const menu = await businessService.getMenuItems(business.id)
+        setSelectedBusiness(prev => prev && prev.id === business.id ? { ...prev, menu } : prev)
+      } catch (err) {
+        showToast('Unable to load menu', 'error')
+      } finally {
+        setMenuLoading(false)
+      }
+    }
+  }
+
   return (
     <div className="businesses-page">
       <h1>Browse Businesses</h1>
@@ -114,7 +139,7 @@ export default function BusinessesPage() {
             <div 
               key={business.id} 
               className="business-card"
-              onClick={() => setSelectedBusiness(business)}
+              onClick={() => viewBusiness(business)}
             >
               <div className="business-icon">{business.image}</div>
               <h2>{business.name}</h2>
@@ -142,7 +167,11 @@ export default function BusinessesPage() {
           <div className="menu-section">
             <h3>Menu</h3>
             <div className="menu-grid">
-              {selectedBusiness.menu.map(item => (
+              {menuLoading && <div className="loading">Loading menu...</div>}
+              {(!menuLoading && selectedBusiness.menu && selectedBusiness.menu.length === 0) && (
+                <div className="muted">No menu items available.</div>
+              )}
+              {(selectedBusiness.menu || []).map(item => (
                 <div key={item.id} className="menu-item-card">
                   <div className="menu-item-info">
                     <h4>{item.name}</h4>
@@ -170,4 +199,3 @@ export default function BusinessesPage() {
     </div>
   )
 }
-

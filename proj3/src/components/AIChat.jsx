@@ -35,14 +35,26 @@ export default function AIChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  const ensureMenu = async (business) => {
+    if (business.menu && Array.isArray(business.menu)) return business
+    try {
+      const menu = await businessService.getMenuItems(business.id)
+      return { ...business, menu }
+    } catch (err) {
+      console.error('AIChat: failed to load menu for business', business?.id, err)
+      return { ...business, menu: [] }
+    }
+  }
+
   const getBusinessSuggestions = (query) => {
     const lowerQuery = query.toLowerCase()
     const allBusinesses = []
     
     // Get all businesses and their menu items
-    businessService.getAllBusinesses().then(businesses => {
-      businesses.forEach(business => {
-        business.menu.forEach(item => {
+    businessService.getAllBusinesses().then(async (businesses) => {
+      const withMenus = await Promise.all(businesses.map(b => ensureMenu(b)))
+      withMenus.forEach(business => {
+        (business.menu || []).forEach(item => {
           if (item.name.toLowerCase().includes(lowerQuery) || 
               item.description.toLowerCase().includes(lowerQuery) ||
               item.category.toLowerCase().includes(lowerQuery) ||
@@ -65,7 +77,7 @@ export default function AIChat() {
       })
 
       setSuggestions(sorted.slice(0, 5))
-    })
+    }).catch(() => setSuggestions([]))
   }
 
   const handleSendMessage = async (queryText) => {
@@ -83,8 +95,9 @@ export default function AIChat() {
         query.includes('cough') || query.includes('first aid')) {
       const businesses = await businessService.getBusinessesByType('pharmacy')
       if (businesses.length > 0) {
-        const pharmacy = businesses[0]
-        response = `I found ${pharmacy.name}! They have items like ${pharmacy.menu.slice(0, 3).map(m => m.name).join(', ')}. Would you like to see their full menu?`
+        const pharmacy = await ensureMenu(businesses[0])
+        const preview = (pharmacy.menu || []).slice(0, 3).map(m => m.name).join(', ')
+        response = `I found ${pharmacy.name}!${preview ? ` They have items like ${preview}.` : ''} Would you like to see their full menu?`
         foundSuggestions = [pharmacy]
       }
     }
@@ -106,8 +119,9 @@ export default function AIChat() {
           matchedRestaurant = restaurants.find(r => r.name.toLowerCase().includes('sushi'))
         }
         
-        const targetRestaurant = matchedRestaurant || restaurants[0]
-        response = `I found ${targetRestaurant.name}! They have items like ${targetRestaurant.menu.slice(0, 3).map(m => m.name).join(', ')}. Would you like to see their menu?`
+        const targetRestaurant = await ensureMenu(matchedRestaurant || restaurants[0])
+        const preview = (targetRestaurant.menu || []).slice(0, 3).map(m => m.name).join(', ')
+        response = `I found ${targetRestaurant.name}!${preview ? ` They have items like ${preview}.` : ''} Would you like to see their menu?`
         foundSuggestions = [targetRestaurant]
       }
     }
@@ -116,8 +130,9 @@ export default function AIChat() {
              query.includes('bread') || query.includes('eggs') || query.includes('food items')) {
       const businesses = await businessService.getBusinessesByType('supermarket')
       if (businesses.length > 0) {
-        const supermarket = businesses[0]
-        response = `I found ${supermarket.name}! They have items like ${supermarket.menu.slice(0, 3).map(m => m.name).join(', ')}. Would you like to see their full selection?`
+        const supermarket = await ensureMenu(businesses[0])
+        const preview = (supermarket.menu || []).slice(0, 3).map(m => m.name).join(', ')
+        response = `I found ${supermarket.name}!${preview ? ` They have items like ${preview}.` : ''} Would you like to see their full selection?`
         foundSuggestions = [supermarket]
       }
     }
@@ -125,9 +140,10 @@ export default function AIChat() {
     else {
       getBusinessSuggestions(query)
       const businesses = await businessService.getAllBusinesses()
+      const withMenus = await Promise.all(businesses.map(b => ensureMenu(b)))
       const allItems = []
-      businesses.forEach(business => {
-        business.menu.forEach(item => {
+      withMenus.forEach(business => {
+        (business.menu || []).forEach(item => {
           if (item.name.toLowerCase().includes(query) || 
               item.description.toLowerCase().includes(query)) {
             allItems.push({ business, item })
@@ -271,4 +287,3 @@ export default function AIChat() {
     </>
   )
 }
-

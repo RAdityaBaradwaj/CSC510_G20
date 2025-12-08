@@ -1,5 +1,5 @@
 import React from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import AIChat from './components/AIChat'
 import Home from './pages/Home'
@@ -11,9 +11,43 @@ import RequireAuth from './auth/RequireAuth'
 import RequireAdmin from './auth/RequireAdmin'
 import GlobalAuthGate from './auth/GlobalAuthGate'
 import { AuthUIProvider } from './auth/AuthUIContext'
+import { useAuth } from './auth/AuthContext'
+import { isAdmin } from './utils/adminAuth'
 import './App.css'
 
 function App() {
+  const { user, logout } = useAuth()
+  const adminOnly = user ? isAdmin(user) : false
+
+  if (adminOnly) {
+    return (
+      <AuthUIProvider>
+        <GlobalAuthGate />
+        <div className="App">
+          <Navbar />
+          <AIChat />
+          <Routes>
+            <Route element={<RequireAuth />}>
+              <Route element={<RequireAdmin />}>
+                <Route
+                  path="/admin"
+                  element={
+                    <div style={{ minHeight: '100vh', width: '100%' }}>
+                      <AdminPage />
+                    </div>
+                  }
+                />
+                <Route path="/" element={<Navigate to="/admin" replace />} />
+                <Route path="*" element={<Navigate to="/admin" replace />} />
+              </Route>
+            </Route>
+            <Route path="*" element={<Navigate to="/admin" replace />} />
+          </Routes>
+        </div>
+      </AuthUIProvider>
+    )
+  }
+
   return (
     <AuthUIProvider>
       {/* Intercept any click when user is not authed */}

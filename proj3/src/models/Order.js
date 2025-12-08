@@ -9,6 +9,8 @@ export class Order {
     driverId = null,
     status = 'pending',
     location,
+    pickupLocation = null,
+    businessLocation = null,
     items = [],
     total = 0,
     notes = '',
@@ -24,6 +26,9 @@ export class Order {
     this.driverId = driverId
     this.status = status
     this.location = location // { zipCode, lat, lng, address }
+    // Always keep the business pickup location alongside the delivery address for clustering
+    this.pickupLocation = pickupLocation || businessLocation // { lat, lng, address }
+    this.businessLocation = businessLocation || pickupLocation // mirror for clarity in UI/debugging
     this.items = items
     this.total = total
     this.notes = notes
@@ -46,6 +51,8 @@ export class Order {
       driverId: this.driverId,
       status: this.status,
       location: this.location,
+      pickupLocation: this.pickupLocation,
+      businessLocation: this.businessLocation,
       items: this.items,
       total: this.total,
       notes: this.notes,
@@ -67,6 +74,8 @@ export class Order {
       driverId: data.driverId,
       status: data.status,
       location: data.location || data.deliveryLocation,
+      pickupLocation: data.pickupLocation || data.storeLocation || data.businessLocation,
+      businessLocation: data.businessLocation || data.storeLocation || data.pickupLocation,
       items: data.items || [],
       total: data.total || 0,
       notes: data.notes || '',
@@ -83,6 +92,13 @@ export class Order {
     if (!this.customerId) errors.push('Customer ID is required')
     if (!this.businessId) errors.push('Business ID is required')
     if (!this.location) errors.push('Location is required')
+    if (this.location && (!this.location.lat || !this.location.lng)) {
+      errors.push('Customer location must include lat/lng for routing')
+    }
+    if (!this.pickupLocation) errors.push('Business pickup location is required')
+    if (this.pickupLocation && (!this.pickupLocation.lat || !this.pickupLocation.lng)) {
+      errors.push('Business pickup location must include lat/lng for routing')
+    }
     if (!Array.isArray(this.items)) errors.push('Items must be an array')
     if (this.items.length === 0) errors.push('Order must have at least one item')
     

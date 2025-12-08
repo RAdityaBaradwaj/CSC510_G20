@@ -1,20 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { useToast } from '../contexts/ToastContext'
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
-import L from 'leaflet'
 import { batchService } from '../services/batches/batchService'
 import { driverService } from '../services/drivers/driverService'
 import { orderService } from '../services/orders/orderService'
 import './AdminPage.css'
-
-// Fix for default marker icons in React Leaflet
-delete L.Icon.Default.prototype._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-shadow.png',
-})
 
 export default function AdminPage() {
   const { user } = useAuth()
@@ -132,16 +122,35 @@ export default function AdminPage() {
     return colors[status] || '#666'
   }
 
-  // Calculate estimated time of arrival based on distance
-  // Assumes average speed of 30 km/h in urban areas
-  const calculateETA = (distanceKm) => {
-    const averageSpeedKmPerHour = 30
-    const timeInHours = distanceKm / averageSpeedKmPerHour
-    const timeInMinutes = Math.ceil(timeInHours * 60)
-    return timeInMinutes
+  const unassignedOrders = orders.filter(o => !o.driverId && ['pending', 'ready'].includes(o.status))
+
+  const buildGoogleRouteUrl = (batch) => {
+    if (!batch || !batch.route || batch.route.length === 0) return ''
+    const origin = batch.metadata?.origin || batch.route[0]
+    const destination = batch.route[batch.route.length - 1]
+    const waypoints = batch.route.slice(0, -1).map(p => `${p.lat},${p.lng}`).join('|')
+    return `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}${waypoints ? `&waypoints=${encodeURIComponent(waypoints)}` : ''}`
   }
 
-  const unassignedOrders = orders.filter(o => !o.driverId && ['pending', 'ready'].includes(o.status))
+  const buildPolylinePoints = (batch) => {
+    if (!batch) return []
+    const points = []
+    const origin = batch.metadata?.origin
+    if (origin?.lat && origin?.lng) {
+      points.push([origin.lat, origin.lng])
+    }
+    if (batch.route && batch.route.length > 0) {
+      batch.route.forEach(p => {
+        if (p.lat && p.lng) points.push([p.lat, p.lng])
+      })
+    } else if (batch.orders && batch.orders.length > 0) {
+      batch.orders.forEach(order => {
+        const loc = order.location || order.deliveryLocation
+        if (loc?.lat && loc?.lng) points.push([loc.lat, loc.lng])
+      })
+    }
+    return points
+  }
 
   // Always show something, even while loading
   if (loading) {
@@ -194,24 +203,6 @@ export default function AdminPage() {
       width: '100%',
       boxSizing: 'border-box'
     }}>
-      {/* Debug info */}
-      <div style={{ 
-        backgroundColor: '#e3f2fd', 
-        padding: '10px', 
-        marginBottom: '15px', 
-        borderRadius: '4px', 
-        fontSize: '12px',
-        color: '#1976d2',
-        border: '1px solid #90caf9'
-      }}>
-        <strong>Admin Page Status:</strong> User: {user?.email || 'None'} | 
-        Batches: {batches.length} | 
-        Drivers: {drivers.length} | 
-        Orders: {orders.length} | 
-        Loading: {loading ? 'Yes' : 'No'} |
-        Error: {error || 'None'}
-      </div>
-      
       <div className="admin-header" style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
         <h1 style={{ margin: '0 0 15px 0', color: '#333', fontSize: '28px' }}>Admin Dashboard - Driver Assignment</h1>
         <div className="admin-actions">
@@ -246,245 +237,178 @@ export default function AdminPage() {
         </div>
       )}
 
-      <div className="admin-stats" style={{ marginBottom: '30px' }}>
-        <div className="stat-card">
-          <div className="stat-value">{drivers.length}</div>
-          <div className="stat-label">Total Drivers</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value">{batches.length}</div>
-          <div className="stat-label">Active Batches</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value">{unassignedOrders.length}</div>
-          <div className="stat-label">Unassigned Orders</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value">{orders.length}</div>
-          <div className="stat-label">Total Orders</div>
-        </div>
-      </div>
+      <div className="admin-content" style={{ display: 'grid', gap: '20px', gridTemplateColumns: '1.2fr 1fr', alignItems: 'start' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="orders-section">
+            <h2 style={{ marginBottom: '12px', color: '#333', fontSize: '22px' }}>All Orders ({orders.length})</h2>
+            <div style={{ 
+              backgroundColor: 'white', 
+              borderRadius: '8px', 
+              padding: '16px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              maxHeight: '360px',
+              overflowY: 'auto'
+            }}>
+              {orders.length === 0 ? (
+                <p style={{ color: '#666', textAlign: 'center', padding: '12px' }}>No orders found</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {orders.map(order => {
+                    const orderLocation = order.location || order.deliveryLocation
+                    return (
+                      <div 
+                        key={order.id} 
+                        style={{
+                          padding: '12px',
+                          border: '1px solid #e0e0e0',
+                          borderRadius: '6px',
+                          backgroundColor: order.driverId ? '#f0f8ff' : '#fff9e6'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '6px' }}>
+                          <div>
+                            <strong style={{ fontSize: '15px', color: '#333' }}>Order #{order.id}</strong>
+                            <div style={{ fontSize: '13px', color: '#666', marginTop: '2px' }}>
+                              Customer: {order.customerName || 'N/A'}
+                            </div>
+                            <div style={{ fontSize: '13px', color: '#666' }}>
+                              Business: {order.businessName || 'N/A'}
+                            </div>
+                          </div>
+                          <div style={{ 
+                            padding: '3px 10px', 
+                            borderRadius: '12px', 
+                            backgroundColor: getStatusColor(order.status),
+                            color: 'white',
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            textTransform: 'uppercase'
+                          }}>
+                            {order.status}
+                          </div>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px', color: '#555' }}>
+                          <div>
+                            <strong>Total:</strong> ${order.total?.toFixed(2) || '0.00'}
+                          </div>
+                          <div>
+                            <strong>Items:</strong> {order.items?.length || 0}
+                          </div>
+                          <div>
+                            <strong>Location:</strong> {orderLocation?.address || orderLocation?.zipCode || 'N/A'}
+                          </div>
+                          <div>
+                            <strong>Driver:</strong> {order.driverId || 'Unassigned'}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#999', marginTop: '6px' }}>
+                          Created: {new Date(order.createdAt).toLocaleString()}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
 
-      <div className="admin-content" style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-        {/* Orders Section */}
-        <div className="orders-section">
-          <h2 style={{ marginBottom: '20px', color: '#333', fontSize: '24px' }}>All Orders ({orders.length})</h2>
-          <div style={{ 
-            backgroundColor: 'white', 
-            borderRadius: '8px', 
-            padding: '20px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            maxHeight: '500px',
-            overflowY: 'auto'
-          }}>
-            {orders.length === 0 ? (
-              <p style={{ color: '#666', textAlign: 'center', padding: '20px' }}>No orders found</p>
+          <div className="batches-section">
+            <h2 style={{ marginBottom: '12px', color: '#333', fontSize: '22px' }}>Order Batches ({batches.length})</h2>
+            
+            {batches.length === 0 ? (
+              <div className="no-data" style={{ 
+                backgroundColor: 'white', 
+                padding: '20px', 
+                borderRadius: '8px',
+                textAlign: 'center',
+                color: '#666',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}>
+                <p>No batches created yet. Click "Auto-Assign Orders to Drivers" to create batches.</p>
+              </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {orders.map(order => {
-                  const orderLocation = order.location || order.deliveryLocation
-                  return (
-                    <div 
-                      key={order.id} 
-                      style={{
-                        padding: '15px',
-                        border: '1px solid #e0e0e0',
-                        borderRadius: '6px',
-                        backgroundColor: order.driverId ? '#f0f8ff' : '#fff9e6'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
-                        <div>
-                          <strong style={{ fontSize: '16px', color: '#333' }}>Order #{order.id}</strong>
-                          <div style={{ fontSize: '14px', color: '#666', marginTop: '4px' }}>
-                            Customer: {order.customerName || 'N/A'}
-                          </div>
-                          <div style={{ fontSize: '14px', color: '#666' }}>
-                            Business: {order.businessName || 'N/A'}
-                          </div>
-                        </div>
-                        <div style={{ 
-                          padding: '4px 12px', 
-                          borderRadius: '12px', 
-                          backgroundColor: getStatusColor(order.status),
-                          color: 'white',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          textTransform: 'uppercase'
-                        }}>
-                          {order.status}
-                        </div>
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '13px', color: '#555' }}>
-                        <div>
-                          <strong>Total:</strong> ${order.total?.toFixed(2) || '0.00'}
-                        </div>
-                        <div>
-                          <strong>Items:</strong> {order.items?.length || 0}
-                        </div>
-                        <div>
-                          <strong>Location:</strong> {orderLocation?.address || orderLocation?.zipCode || 'N/A'}
-                        </div>
-                        <div>
-                          <strong>Driver:</strong> {order.driverId || 'Unassigned'}
-                        </div>
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#999', marginTop: '8px' }}>
-                        Created: {new Date(order.createdAt).toLocaleString()}
+              <div className="batches-list" style={{ 
+                backgroundColor: 'white', 
+                borderRadius: '8px', 
+                padding: '12px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                maxHeight: '300px',
+                overflowY: 'auto'
+              }}>
+                {batches.map(batch => (
+                  <div 
+                    key={batch.id} 
+                    className={`batch-card ${selectedBatch?.id === batch.id ? 'selected' : ''}`}
+                    onClick={() => setSelectedBatch(batch)}
+                  >
+                    <div className="batch-header">
+                      <div className="batch-id">Batch #{batch.id}</div>
+                      <div 
+                        className="batch-status"
+                        style={{ backgroundColor: getStatusColor(batch.status) }}
+                      >
+                        {batch.status}
                       </div>
                     </div>
-                  )
-                })}
+                    
+                    <div className="batch-details">
+                      <p><strong>Driver:</strong> {batch.driverName} ({batch.driverId})</p>
+                      <p><strong>Orders:</strong> {batch.orders?.length || 0}</p>
+                      <p><strong>Total Distance:</strong> {batch.totalDistance?.toFixed(2) || '0.00'} km</p>
+                      <p><strong>Assigned:</strong> {new Date(batch.assignedAt).toLocaleString()}</p>
+                    </div>
+
+                    {batch.orders && batch.orders.length > 0 && (
+                      <div className="batch-orders">
+                        <strong>Order IDs:</strong>
+                        <div className="order-ids">
+                          {batch.orders.map(order => (
+                            <span key={order.id} className="order-id-tag">
+                              {order.id}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>
         </div>
 
-        <div className="batches-section">
-          <h2 style={{ marginBottom: '20px', color: '#333', fontSize: '24px' }}>Order Batches ({batches.length})</h2>
-          
-          {batches.length === 0 ? (
-            <div className="no-data" style={{ 
-              backgroundColor: 'white', 
-              padding: '40px', 
-              borderRadius: '8px',
-              textAlign: 'center',
-              color: '#666',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-            }}>
-              <p>No batches created yet. Click "Auto-Assign Orders to Drivers" to create batches.</p>
-            </div>
-          ) : (
-            <div className="batches-list" style={{ 
-              backgroundColor: 'white', 
-              borderRadius: '8px', 
-              padding: '20px',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-              maxHeight: '600px',
-              overflowY: 'auto'
-            }}>
-              {batches.map(batch => (
-                <div 
-                  key={batch.id} 
-                  className={`batch-card ${selectedBatch?.id === batch.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedBatch(batch)}
-                >
-                  <div className="batch-header">
-                    <div className="batch-id">Batch #{batch.id}</div>
-                    <div 
-                      className="batch-status"
-                      style={{ backgroundColor: getStatusColor(batch.status) }}
-                    >
-                      {batch.status}
-                    </div>
-                  </div>
-                  
-                  <div className="batch-details">
-                    <p><strong>Driver:</strong> {batch.driverName} ({batch.driverId})</p>
-                    <p><strong>Orders:</strong> {batch.orders?.length || 0}</p>
-                    <p><strong>Total Distance:</strong> {batch.totalDistance?.toFixed(2) || '0.00'} km</p>
-                    <p><strong>Assigned:</strong> {new Date(batch.assignedAt).toLocaleString()}</p>
-                    {batch.estimatedDeliveryTime && (
-                      <p style={{ color: '#228B22', fontWeight: '600' }}>
-                        <strong>ETA:</strong> {new Date(batch.estimatedDeliveryTime).toLocaleString()}
-                      </p>
-                    )}
-                    {!batch.estimatedDeliveryTime && batch.totalDistance && (
-                      <p style={{ color: '#666', fontStyle: 'italic' }}>
-                        <strong>Estimated ETA:</strong> {calculateETA(batch.totalDistance)} minutes
-                      </p>
-                    )}
-                  </div>
-
-                  {batch.orders && batch.orders.length > 0 && (
-                    <div className="batch-orders">
-                      <strong>Order IDs:</strong>
-                      <div className="order-ids">
-                        {batch.orders.map(order => (
-                          <span key={order.id} className="order-id-tag">
-                            {order.id}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         <div className="map-section" style={{ 
           backgroundColor: 'white', 
           borderRadius: '8px', 
-          padding: '20px',
+          padding: '16px',
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
         }}>
-          <h2 style={{ marginBottom: '20px', color: '#333', fontSize: '24px' }}>Batch Map View</h2>
-          {selectedBatch ? (
-            <MapContainer
-              center={(() => {
-                const firstOrder = selectedBatch.orders?.[0]
-                const orderLocation = firstOrder?.location || firstOrder?.deliveryLocation
-                return orderLocation ? [orderLocation.lat, orderLocation.lng] : [40.7128, -74.0060]
-              })()}
-              zoom={12}
-              style={{ height: '500px', width: '100%' }}
-            >
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          <h2 style={{ marginBottom: '12px', color: '#333', fontSize: '22px' }}>Batch Map View</h2>
+          {selectedBatch ? (() => {
+            const originPoint = selectedBatch.metadata?.origin || selectedBatch.route?.find(r => r.type === 'pickup') || selectedBatch.route?.[0]
+            const stops = selectedBatch.route || []
+            const destinationPoint = stops[stops.length - 1]
+            const waypointPoints = stops.slice(1, -1).map(p => `${p.lat},${p.lng}`).join('|')
+            const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
+            const embedUrl = originPoint && destinationPoint && key
+              ? `https://www.google.com/maps/embed/v1/directions?key=${key}&origin=${originPoint.lat},${originPoint.lng}&destination=${destinationPoint.lat},${destinationPoint.lng}${waypointPoints ? `&waypoints=${encodeURIComponent(waypointPoints)}` : ''}`
+              : ''
+            return embedUrl ? (
+              <iframe
+                title="Google Maps Route"
+                width="100%"
+                height="500"
+                style={{ border: 0 }}
+                loading="lazy"
+                allowFullScreen
+                src={embedUrl}
               />
-              
-              {/* Driver location */}
-              {selectedBatch.driverId && (() => {
-                const driver = drivers.find(d => d.id === selectedBatch.driverId)
-                if (driver?.currentLocation) {
-                  return (
-                    <Marker
-                      position={[driver.currentLocation.lat, driver.currentLocation.lng]}
-                    >
-                      <Popup>
-                        <strong>Driver: {driver.name}</strong>
-                      </Popup>
-                    </Marker>
-                  )
-                }
-                return null
-              })()}
-
-              {/* Order locations */}
-              {selectedBatch.orders?.map(order => {
-                const orderLocation = order.location || order.deliveryLocation
-                if (!orderLocation || !orderLocation.lat || !orderLocation.lng) {
-                  return null
-                }
-                return (
-                  <Marker
-                    key={order.id}
-                    position={[orderLocation.lat, orderLocation.lng]}
-                  >
-                    <Popup>
-                      <div>
-                        <strong>Order: {order.id}</strong>
-                        <p>{orderLocation.address || `${orderLocation.zipCode || 'N/A'}`}</p>
-                        <p>Status: {order.status}</p>
-                      </div>
-                    </Popup>
-                  </Marker>
-                )
-              })}
-
-              {/* Route line */}
-              {selectedBatch.route && selectedBatch.route.length > 1 && (
-                <Polyline
-                  positions={selectedBatch.route.map(point => [point.lat, point.lng])}
-                  color="#681a75"
-                  weight={3}
-                />
-              )}
-            </MapContainer>
-          ) : (
+            ) : (
+              <div className="map-placeholder">
+                <p>Route not available. Ensure VITE_GOOGLE_MAPS_API_KEY is set and Maps Embed API allows http://localhost:5173.</p>
+              </div>
+            )
+          })() : (
             <div className="map-placeholder">
               <p>Select a batch to view on map</p>
             </div>
@@ -494,4 +418,3 @@ export default function AdminPage() {
     </div>
   )
 }
-

@@ -1,61 +1,51 @@
 // Order Service - Handles all order-related operations
-// Abstracted to work with mock or real API
+// Uses local storage to persist real customer orders (no static mocks)
 
-import { Order, OrderItem } from '../../models/Order'
+import { Order } from '../../models/Order'
 import { distanceCalculator } from '../../utils/distanceCalculator'
-import * as mockData from './mockData'
 
-// API abstraction - switch between mock and real
-const isMockMode = () => {
-  return import.meta.env.VITE_USE_MOCK_DATA !== 'false' || !import.meta.env.VITE_API_BASE_URL
+const STORAGE_KEY = 'neighborhoodpool-orders'
+
+function loadOrders() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
 }
 
-const useMockAPI = () => {
-  // Use in-memory data for now
-  return true // Always use mock for now
+function saveOrders(orders) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(orders))
 }
 
 export const orderService = {
   // Get all orders
   getAllOrders: async (filters = {}) => {
-    if (useMockAPI()) {
-      await new Promise(resolve => setTimeout(resolve, 300))
-      let orders = mockData.orders.map(order => Order.fromAPIResponse(order))
-      
-      // Apply filters
-      if (filters.status) {
-        orders = orders.filter(o => o.status === filters.status)
-      }
-      if (filters.customerId) {
-        orders = orders.filter(o => o.customerId === filters.customerId)
-      }
-      if (filters.businessId) {
-        orders = orders.filter(o => o.businessId === filters.businessId)
-      }
-      
-      return orders
-    } else {
-      // Real API call would go here
-      const { endpoints } = await import('../api/endpoints')
-      const { api } = await import('../api/client')
-      const response = await api.get(endpoints.orders.list(), { params: filters })
-      return response.map(order => Order.fromAPIResponse(order))
+    await new Promise(resolve => setTimeout(resolve, 50))
+    let orders = loadOrders().map(o => Order.fromAPIResponse(o))
+
+    if (filters.status) {
+      orders = orders.filter(o => o.status === filters.status)
     }
+    if (filters.customerId) {
+      orders = orders.filter(o => o.customerId === filters.customerId)
+    }
+    if (filters.businessId) {
+      orders = orders.filter(o => o.businessId === filters.businessId)
+    }
+
+    return orders
   },
 
   // Get order by ID
   getOrderById: async (id) => {
-    if (useMockAPI()) {
-      await new Promise(resolve => setTimeout(resolve, 200))
-      const order = mockData.orders.find(o => o.id === id)
-      if (!order) throw new Error('Order not found')
-      return Order.fromAPIResponse(order)
-    } else {
-      const { endpoints } = await import('../api/endpoints')
-      const { api } = await import('../api/client')
-      const response = await api.get(endpoints.orders.byId(id))
-      return Order.fromAPIResponse(response)
-    }
+    await new Promise(resolve => setTimeout(resolve, 50))
+    const order = loadOrders().find(o => o.id === id)
+    if (!order) throw new Error('Order not found')
+    return Order.fromAPIResponse(order)
   },
 
   // Get nearby orders based on location and radius
@@ -98,8 +88,11 @@ export const orderService = {
 
   // Create new order
   createOrder: async (orderData) => {
+    const pickupLocation = orderData.pickupLocation || orderData.businessLocation || orderData.storeLocation
     const newOrder = new Order({
       ...orderData,
+      pickupLocation,
+      businessLocation: orderData.businessLocation || pickupLocation,
       id: `ORD-${Date.now()}`,
       createdAt: new Date(),
       updatedAt: new Date()
@@ -110,38 +103,27 @@ export const orderService = {
       throw new Error(`Order validation failed: ${validation.errors.join(', ')}`)
     }
 
-    if (useMockAPI()) {
-      await new Promise(resolve => setTimeout(resolve, 500))
-      mockData.orders.push(newOrder.toJSON())
-      return newOrder
-    } else {
-      const { endpoints } = await import('../api/endpoints')
-      const { api } = await import('../api/client')
-      const response = await api.post(endpoints.orders.list(), newOrder.toJSON())
-      return Order.fromAPIResponse(response)
-    }
+    await new Promise(resolve => setTimeout(resolve, 100))
+    const orders = loadOrders()
+    orders.push(newOrder.toJSON())
+    saveOrders(orders)
+    return newOrder
   },
 
   // Update order
   updateOrder: async (id, updates) => {
-    if (useMockAPI()) {
-      await new Promise(resolve => setTimeout(resolve, 300))
-      const orderIndex = mockData.orders.findIndex(o => o.id === id)
-      if (orderIndex === -1) throw new Error('Order not found')
-      
-      mockData.orders[orderIndex] = {
-        ...mockData.orders[orderIndex],
-        ...updates,
-        updatedAt: new Date().toISOString()
-      }
-      
-      return Order.fromAPIResponse(mockData.orders[orderIndex])
-    } else {
-      const { endpoints } = await import('../api/endpoints')
-      const { api } = await import('../api/client')
-      const response = await api.put(endpoints.orders.byId(id), updates)
-      return Order.fromAPIResponse(response)
+    await new Promise(resolve => setTimeout(resolve, 50))
+    const orders = loadOrders()
+    const orderIndex = orders.findIndex(o => o.id === id)
+    if (orderIndex === -1) throw new Error('Order not found')
+
+    orders[orderIndex] = {
+      ...orders[orderIndex],
+      ...updates,
+      updatedAt: new Date().toISOString()
     }
+    saveOrders(orders)
+    return Order.fromAPIResponse(orders[orderIndex])
   },
 
   // Update order status
@@ -167,17 +149,13 @@ export const orderService = {
 
   // Delete order
   deleteOrder: async (id) => {
-    if (useMockAPI()) {
-      await new Promise(resolve => setTimeout(resolve, 200))
-      const index = mockData.orders.findIndex(o => o.id === id)
-      if (index === -1) throw new Error('Order not found')
-      mockData.orders.splice(index, 1)
-      return { id, deleted: true }
-    } else {
-      const { endpoints } = await import('../api/endpoints')
-      const { api } = await import('../api/client')
-      return api.delete(endpoints.orders.byId(id))
-    }
+    await new Promise(resolve => setTimeout(resolve, 50))
+    const orders = loadOrders()
+    const index = orders.findIndex(o => o.id === id)
+    if (index === -1) throw new Error('Order not found')
+    orders.splice(index, 1)
+    saveOrders(orders)
+    return { id, deleted: true }
   }
 }
 

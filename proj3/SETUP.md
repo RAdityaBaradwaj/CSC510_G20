@@ -48,9 +48,6 @@ For production, create a `.env` file in the `Proj2` directory:
 ```env
 VITE_API_BASE_URL=https://your-api.com
 VITE_USE_MOCK_DATA=false
-VITE_FIREBASE_API_KEY=your-firebase-key
-VITE_FIREBASE_AUTH_DOMAIN=your-auth-domain
-VITE_FIREBASE_PROJECT_ID=your-project-id
 ```
 
 ### Running Tests
@@ -99,8 +96,8 @@ The build output will be in the `dist` directory.
 - Driver assignment
 
 ### Authentication
-- Firebase authentication
-- Role-based access control
+- Local mock authentication (no external providers)
+- Role-based access control (includes admin via local credentials)
 - Multi-user support (Customer, Driver, Business, Admin)
 
 ## Troubleshooting
@@ -128,12 +125,6 @@ npm install
 # Run with verbose output
 npm test -- --reporter=verbose
 ```
-
-### Firebase Authentication Issues
-
-- Ensure Firebase configuration is correct
-- Check that Firebase project is set up properly
-- Verify API keys in environment variables
 
 ### Map Not Loading
 

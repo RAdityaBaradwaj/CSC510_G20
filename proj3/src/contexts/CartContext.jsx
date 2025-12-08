@@ -3,9 +3,9 @@ import React, { createContext, useContext, useState, useCallback } from 'react'
 const CartContext = createContext(null)
 
 export function CartProvider({ children }) {
-  const [cart, setCart] = useState([]) // [{ businessId, businessName, items: [{ menuItem, quantity }] }]
+  const [cart, setCart] = useState([]) // [{ businessId, businessName, businessLocation, items: [{ menuItem, quantity }] }]
 
-  const addToCart = useCallback((businessId, businessName, menuItem, quantity = 1) => {
+  const addToCart = useCallback((businessId, businessName, menuItem, quantity = 1, businessLocation = null) => {
     // Validate inputs
     if (!businessId || !businessName) {
       throw new Error('Business ID and name are required')
@@ -32,6 +32,7 @@ export function CartProvider({ children }) {
           return [...prevCart, {
             businessId,
             businessName,
+            businessLocation,
             items: [{ menuItem, quantity }]
           }]
         } else {
@@ -188,4 +189,3 @@ export const useCart = () => {
   }
   return context
 }
-

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
-import { prettyFirebaseError } from "../../auth/errorMessages";
+import { prettyAuthError } from "../../auth/errorMessages";
 
 const field = { width: "100%", padding: "12px 12px", borderRadius: 10, border: "1px solid #e6e2ea", outline: "none", background: "#fbf8ff" };
 const label = { fontSize: 13, marginBottom: 6, color: "#3c2f3f", fontWeight: 600 };
@@ -19,7 +19,7 @@ export default function SignupForm({ onDone }) {
       await signup(form.name.trim(), form.email.trim(), form.password);
       onDone?.();
     } catch (e) {
-      setErr(prettyFirebaseError(e?.code));
+      setErr(prettyAuthError(e?.code));
     }
   };
 

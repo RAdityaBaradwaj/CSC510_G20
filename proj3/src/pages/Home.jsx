@@ -86,25 +86,6 @@ export default function Home() {
             </Link>
           )}
         </div>
-
-        <div style={{ 
-          marginTop: "3rem", 
-          padding: "20px", 
-          background: "#f5f5f5", 
-          borderRadius: "8px", 
-          textAlign: "left",
-          maxWidth: "500px",
-          margin: "3rem auto 0"
-        }}>
-          <h3 style={{ marginTop: 0, fontSize: "1.1rem", color: "#333" }}>Admin Access</h3>
-          <p style={{ fontSize: "0.9rem", color: "#666", margin: "10px 0" }}>
-            {adminInfo.note}
-          </p>
-          <div style={{ fontSize: "0.85rem", color: "#555" }}>
-            <p style={{ margin: "5px 0" }}><strong>Email:</strong> {adminInfo.email}</p>
-            <p style={{ margin: "5px 0" }}><strong>Password:</strong> {adminInfo.password}</p>
-          </div>
-        </div>
       </main>
     </div>
   );

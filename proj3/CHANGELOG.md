@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Console-based analytics
 
 - **Multi-User Support**: Customer, Driver, Business, and Admin roles
-  - Firebase authentication
+  - Local authentication (mock)
   - Role-based access control
   - Protected routes
 
@@ -56,7 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Vitest for testing
 - React Leaflet for mapping
 - OpenWeather Geocoding API integration
-- Firebase authentication
+- Local authentication (mock/in-memory)
 - Modular, scalable codebase
 
 ### Documentation

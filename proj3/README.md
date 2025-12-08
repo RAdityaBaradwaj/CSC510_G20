@@ -41,12 +41,39 @@
 
 ## 🚀 Quick Start
 
-### Run Application
+### Prereqs
+- Node.js 18+
+- Postgres running locally (defaults to `postgres://postgres:postgres@localhost:5432/neighborhoodpool`; override with `DATABASE_URL`)
+
+### Environment
+Create `proj3/.env` (or update if it exists):
+```env
+VITE_API_BASE_URL=http://localhost:4000
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/neighborhoodpool
+```
+
+### Setup (one time)
 ```bash
-cd Proj2
+cd proj3
 npm install
+
+# apply migrations + seed (order matters)
+npm run db:migrate
+npm run db:seed
+```
+
+### Run Backend (local API)
+```bash
+cd proj3
+npm run server
+# API available at http://localhost:4000
+```
+
+### Run Frontend
+```bash
+cd proj3
 npm run dev
-# Visit http://localhost:5173
+# App available at http://localhost:5173
 ```
 
 ### Run Tests
@@ -54,7 +81,12 @@ npm run dev
 npm test                # Run all tests
 npm test -- --watch     # Watch mode
 npm test -- --coverage  # With coverage
+npm run test:backend    # Backend-only Vitest suite (node env)
 ```
+
+Notes:
+- Restaurant/menu data is seeded into Postgres automatically on backend start if tables are empty.
+- Adjust `DATABASE_URL` and `VITE_API_BASE_URL` if you run on non-default hosts or ports.
 
 ---
 
@@ -76,12 +108,11 @@ NeighborhoodPool is a professional-grade location-based order management system 
 ![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat&logo=vite&logoColor=white)
 ![Leaflet](https://img.shields.io/badge/Leaflet-199900?style=flat&logo=leaflet&logoColor=white)
-![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=flat&logo=firebase&logoColor=black)
 ![Vitest](https://img.shields.io/badge/Vitest-729B1B?style=flat&logo=vitest&logoColor=white)
 
 - **Frontend**: React 18, Vite, React Router
 - **Mapping**: React Leaflet, Leaflet
-- **Authentication**: Firebase
+- **Authentication**: Local mock auth (no external services)
 - **Testing**: Vitest, React Testing Library
 - **APIs**: OpenWeather Geocoding API
 
@@ -138,7 +169,7 @@ NeighborhoodPool is a professional-grade location-based order management system 
    - Pool suggestions based on proximity
 
 3. **Multi-User Authentication** ✅
-   - Firebase authentication integration
+   - Local authentication (mock) with role-based access
    - Role-based access control (Customer, Driver, Business)
    - User management system
 
