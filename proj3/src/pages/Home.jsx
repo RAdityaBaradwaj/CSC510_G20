@@ -37,9 +37,6 @@ export default function Home() {
           padding: "24px 24px 0",
         }}
       >
-        <h1 style={{ margin: 0, fontSize: "1.6rem", letterSpacing: 0.3 }}>
-          NeighborhoodPool
-        </h1>
       </header>
 
       <main

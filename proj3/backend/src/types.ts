@@ -68,3 +68,39 @@ export interface FeedItem {
   isJoinable: boolean
   poolId?: string | null
 }
+
+export interface RestaurantAccount {
+  id: string
+  name: string
+  email: string
+  password: string // plaintext for demo only; do not use in prod
+  restaurantId?: string // optional link to existing restaurant row
+  address: string
+  menu: RestaurantMenuItem[]
+}
+
+export interface RestaurantOrderItem {
+  name: string
+  quantity: number
+  priceCents: number
+}
+
+export type RestaurantOrderStatus = 'pending' | 'preparing' | 'ready' | 'completed'
+
+export interface RestaurantOrder {
+  id: string
+  restaurantId: string
+  customerName: string
+  items: RestaurantOrderItem[]
+  totalCents: number
+  status: RestaurantOrderStatus
+  createdAt: string
+}
+
+export interface RestaurantMenuItem {
+  id: string
+  name: string
+  description?: string
+  priceCents: number
+  category?: string
+}

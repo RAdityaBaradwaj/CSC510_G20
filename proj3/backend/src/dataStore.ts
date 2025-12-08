@@ -1,4 +1,4 @@
-import { ActivityFeedEvent, Errand, Pool, PrivacyPreference, User, UserIncentiveLedger } from './types'
+import { ActivityFeedEvent, Errand, Pool, PrivacyPreference, User, UserIncentiveLedger, RestaurantAccount, RestaurantOrder } from './types'
 
 const now = new Date()
 
@@ -169,6 +169,23 @@ const incentiveLedger: UserIncentiveLedger[] = [
   }
 ]
 
+// Demo restaurant accounts and orders (in-memory)
+const restaurantAccounts: RestaurantAccount[] = [
+  {
+    id: 'rest-acc-1',
+    name: 'Oak City Pizza',
+    email: 'oakcity@example.com',
+    password: 'pizza123',
+    restaurantId: '',
+    address: '237 S Wilmington St, Raleigh, NC 27601',
+    menu: [
+      { id: 'm-1', name: 'Margherita Pie', description: 'Fresh mozzarella, basil, tomato sauce', priceCents: 1599, category: 'pizza' }
+    ]
+  }
+]
+
+const restaurantOrders: RestaurantOrder[] = []
+
 recalculateTotals()
 
 const seedState = JSON.parse(JSON.stringify({
@@ -176,7 +193,9 @@ const seedState = JSON.parse(JSON.stringify({
   errands,
   pools,
   activityFeedEvents,
-  incentiveLedger
+  incentiveLedger,
+  restaurantAccounts,
+  restaurantOrders
 }))
 
 export const db = {
@@ -184,7 +203,9 @@ export const db = {
   errands,
   pools,
   activityFeedEvents,
-  incentiveLedger
+  incentiveLedger,
+  restaurantAccounts,
+  restaurantOrders
 }
 
 export function generateId(prefix: string) {
@@ -248,5 +269,7 @@ export function resetStore() {
   pools.splice(0, pools.length, ...snapshot.pools)
   activityFeedEvents.splice(0, activityFeedEvents.length, ...snapshot.activityFeedEvents)
   incentiveLedger.splice(0, incentiveLedger.length, ...snapshot.incentiveLedger)
+  restaurantAccounts.splice(0, restaurantAccounts.length, ...snapshot.restaurantAccounts)
+  restaurantOrders.splice(0, restaurantOrders.length, ...snapshot.restaurantOrders)
   recalculateTotals()
 }

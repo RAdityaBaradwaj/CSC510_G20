@@ -3,6 +3,8 @@ import activityFeedRoutes from './routes/activityFeedRoutes'
 import poolRoutes from './routes/poolRoutes'
 import userRoutes from './routes/userRoutes'
 import businessRoutes from './routes/businessRoutes'
+import restaurantAuthRoutes from './routes/restaurantAuthRoutes'
+import restaurantOrdersRoutes from './routes/restaurantOrdersRoutes'
 import { seedRestaurants } from './db/seedRestaurants'
 import { pool } from './db/pool'
 
@@ -36,6 +38,8 @@ app.use('/api', activityFeedRoutes)
 app.use('/api/pools', poolRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/businesses', businessRoutes)
+app.use('/api/restaurants', restaurantAuthRoutes)
+app.use('/api/restaurants', restaurantOrdersRoutes)
 
 const port = process.env.PORT || 4000
 if (require.main === module) {
