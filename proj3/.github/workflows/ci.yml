@@ -37,4 +37,6 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/coverage-final.json
           flags: frontend,backend
+          root_dir: proj3
+          verbose: true
           fail_ci_if_error: true
