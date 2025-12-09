@@ -10,8 +10,10 @@
 
 <p align="center">
   <!-- TODO: Add actual test coverage badge when CI/CD is set up -->
-  <img src="https://img.shields.io/badge/tests-95%2B%20passing-brightgreen" alt="Tests" />
-  <img src="https://img.shields.io/badge/coverage-80%25-green" alt="Coverage" />
+  <img src="https://img.shields.io/badge/tests-95%2B%20passing-brightgreen" alt="Tests (local suite)" />
+  <a href="https://app.codecov.io/gh/radityabaradwaj/CSC510_G20">
+    <img src="https://codecov.io/gh/radityabaradwaj/CSC510_G20/branch/main/graph/badge.svg" alt="Codecov coverage" />
+  </a>
 
   <!-- TODO: Add formatter badge -->
   <img src="https://img.shields.io/badge/formatter-Prettier-pink" alt="Formatter" />
@@ -76,13 +78,18 @@ npm run dev
 # App available at http://localhost:5173
 ```
 
-### Run Tests
+### Run Tests (local)
 ```bash
 npm test                # Run all tests
 npm test -- --watch     # Watch mode
 npm test -- --coverage  # With coverage
 npm run test:backend    # Backend-only Vitest suite (node env)
 ```
+
+Coverage notes:
+- CI coverage badge is provided via Codecov; set `CODECOV_TOKEN` in repo secrets.
+- Local run: `npm test -- --coverage` (Vitest 0.28.x with `@vitest/coverage-c8`).
+- Reports land in `coverage/coverage-summary.json` and `coverage/index.html`; the single-number lines pct is in `coverage-summary.json` under `total.lines.pct`.
 
 Notes:
 - Restaurant/menu data is seeded into Postgres automatically on backend start if tables are empty.
@@ -120,8 +127,7 @@ NeighborhoodPool is a professional-grade location-based order management system 
 
 ## 🎬 Demo Video
 
-<!-- TODO: Embed your 2-5 minute demo video here -->
-📹 **[Watch Demo Video](https://your-demo-video-url.com)** - 2-minute walkthrough of key features
+📹 **[Watch Demo Video](https://your-demo-video-url.com)** *(placeholder: replace with real link when available)* - 2-minute walkthrough of key features
 
 *Video showcases: Nearby Orders Board, Order Pooling, Route Optimization, and Analytics Dashboard*
 
@@ -131,23 +137,16 @@ NeighborhoodPool is a professional-grade location-based order management system 
 
 ### QR Codes
 
-<!-- TODO: Generate and add actual QR codes for:
-1. Repository URL
-2. Discussion Forum (GitHub Discussions or Discord)
-3. Live Demo URL
--->
-
 <p align="center">
   <strong>Repository</strong> | <strong>Discussion Forum</strong> | <strong>Live Demo</strong><br>
-  <!-- TODO: Add QR code images -->
-  [QR Code Placeholder] | [QR Code Placeholder] | [QR Code Placeholder]
+  <em>QR codes omitted; links below are clickable.</em>
 </p>
 
 ### Direct Links
 
-- **Repository**: [GitHub Repository](https://github.com/shubashwetha/CSC510_Group28/tree/main)
-- **Discussion Forum**: [Discord](https://discord.gg/your-server)
-- **Live Demo**: [Live Demo URL](https://your-demo-url.com)
+- **Repository**: [Project Root](.) (use your local clone)
+- **Discussion Forum**: [Project Discussions](https://github.com/shubashwetha/CSC510_Group28/discussions) *(update if you use another forum)*
+- **Live Demo**: http://localhost:5173 (local dev)
 - **Documentation**: See [ARCHITECTURE.md](./ARCHITECTURE.md) and [SETUP.md](./SETUP.md)
 
 ---
