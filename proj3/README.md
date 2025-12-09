@@ -90,6 +90,7 @@ Coverage notes:
 - CI coverage badge is provided via Codecov; set `CODECOV_TOKEN` in repo secrets.
 - Local run: `npm test -- --coverage` (Vitest 0.28.x with `@vitest/coverage-c8`).
 - Reports land in `coverage/coverage-summary.json` and `coverage/index.html`; the single-number lines pct is in `coverage-summary.json` under `total.lines.pct`.
+- CI is configured to always upload coverage, even if some tests fail, so the badge reflects the latest run.
 
 Notes:
 - Restaurant/menu data is seeded into Postgres automatically on backend start if tables are empty.
