@@ -5,6 +5,7 @@ import userRoutes from './routes/userRoutes'
 import businessRoutes from './routes/businessRoutes'
 import restaurantAuthRoutes from './routes/restaurantAuthRoutes'
 import restaurantOrdersRoutes from './routes/restaurantOrdersRoutes'
+import authRoutes from './routes/authRoutes'
 import { seedRestaurants } from './db/seedRestaurants'
 import { pool } from './db/pool'
 
@@ -35,6 +36,7 @@ app.use((req, _res, next) => {
 app.use(express.json())
 
 app.use('/api', activityFeedRoutes)
+app.use('/api/auth', authRoutes)
 app.use('/api/pools', poolRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/businesses', businessRoutes)

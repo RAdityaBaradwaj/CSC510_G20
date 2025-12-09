@@ -36,3 +36,16 @@ export function formatCurrencyFromCents(cents: number): string {
 export function toRadians(deg: number) {
   return deg * (Math.PI / 180)
 }
+
+// Demo-only admin credential check reused in auth service
+const ADMIN_EMAILS = new Set(['admin@neighborhoodpool.com', 'admin@example.com'])
+const ADMIN_PASSWORDS: Record<string, string> = {
+  'admin@neighborhoodpool.com': 'admin123',
+  'admin@example.com': 'admin123'
+}
+
+export function validateAdminCredentials(email?: string, password?: string) {
+  if (!email || !password) return false
+  const norm = email.toLowerCase()
+  return ADMIN_EMAILS.has(norm) && ADMIN_PASSWORDS[norm] === password
+}

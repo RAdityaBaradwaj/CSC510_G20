@@ -6,7 +6,7 @@ const tokenMap = new Map<string, string>() // token -> restaurantAccountId
 export function signupRestaurant(payload: { name: string; email: string; password: string; restaurantId?: string; address: string; menu: RestaurantMenuItem[] }): RestaurantAccount {
   const existing = db.restaurantAccounts.find(r => r.email.toLowerCase() === payload.email.toLowerCase())
   if (existing) {
-    throw new Error('Restaurant already exists')
+    throw new Error('A restaurant with this email already exists')
   }
   if (!payload.address || !payload.menu || payload.menu.length === 0) {
     throw new Error('Address and at least one menu item are required')

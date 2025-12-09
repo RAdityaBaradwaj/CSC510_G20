@@ -10,7 +10,8 @@ const users: User[] = [
     address: '123 Main St, Brooklyn, NY',
     location: { lat: 40.6782, lng: -73.9442 },
     privacyPreference: 'PUBLIC_NAME',
-    totalCreditsCents: 0
+    totalCreditsCents: 0,
+    password: 'password123'
   },
   {
     id: 'user-2',
@@ -19,7 +20,8 @@ const users: User[] = [
     address: '55 Court St, Brooklyn, NY',
     location: { lat: 40.6925, lng: -73.9903 },
     privacyPreference: 'ANONYMOUS_NEIGHBOR',
-    totalCreditsCents: 0
+    totalCreditsCents: 0,
+    password: 'password123'
   },
   {
     id: 'user-3',
@@ -28,7 +30,8 @@ const users: User[] = [
     address: '8 Greene Ave, Brooklyn, NY',
     location: { lat: 40.6863, lng: -73.9776 },
     privacyPreference: 'PUBLIC_NAME',
-    totalCreditsCents: 0
+    totalCreditsCents: 0,
+    password: 'password123'
   }
 ]
 

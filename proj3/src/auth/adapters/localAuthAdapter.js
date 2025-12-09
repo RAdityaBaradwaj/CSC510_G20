@@ -1,9 +1,23 @@
 import { validateAdminCredentials } from "../../utils/adminAuth"
 
 const LOCAL_USER_KEY = 'np-local-user'
+const USER_REGISTRY_KEY = 'np-user-registry'
 
 let currentUser = loadStoredUser()
 const listeners = new Set()
+
+function loadRegistry() {
+  try {
+    const raw = localStorage.getItem(USER_REGISTRY_KEY)
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveRegistry(registry) {
+  localStorage.setItem(USER_REGISTRY_KEY, JSON.stringify(registry))
+}
 
 function loadStoredUser() {
   try {
@@ -34,6 +48,9 @@ function onAuthStateChanged(cb) {
 }
 
 async function login(email, password) {
+  const registry = loadRegistry()
+  const existing = registry[email?.toLowerCase?.()] || null
+
   // Admin shortcut
   if (validateAdminCredentials(email, password)) {
     currentUser = {
@@ -47,14 +64,20 @@ async function login(email, password) {
     return { user: currentUser }
   }
 
-  // Simple local auth: accept any non-empty credentials
+  // Simple local auth: ensure user exists and password matches
   if (!email || !password) {
     throw new Error('Invalid credentials')
   }
+  if (!existing) {
+    throw new Error('Account not found. Please sign up.')
+  }
+  if (existing.password !== password) {
+    throw new Error('Invalid credentials')
+  }
   currentUser = {
-    uid: `user-${email}`,
-    email,
-    displayName: email.split('@')[0],
+    uid: existing.uid,
+    email: existing.email,
+    displayName: existing.displayName,
     isAdmin: false
   }
   persistUser(currentUser)
@@ -66,10 +89,24 @@ async function signup(name, email, password) {
   if (!email || !password) {
     throw new Error('Missing fields')
   }
+   const registry = loadRegistry()
+   const key = email.toLowerCase()
+   if (registry[key]) {
+     throw new Error('An account with this email already exists')
+   }
+   const newUser = {
+     uid: `user-${email}`,
+     email,
+     displayName: name || email.split('@')[0],
+     password
+   }
+   registry[key] = newUser
+   saveRegistry(registry)
+
   currentUser = {
-    uid: `user-${email}`,
-    email,
-    displayName: name || email.split('@')[0],
+    uid: newUser.uid,
+    email: newUser.email,
+    displayName: newUser.displayName,
     isAdmin: false
   }
   persistUser(currentUser)
@@ -79,6 +116,16 @@ async function signup(name, email, password) {
 
 async function loginWithGoogle() {
   // Mock a Google login locally
+  const registry = loadRegistry()
+  if (!registry['neighbor@example.com']) {
+    registry['neighbor@example.com'] = {
+      uid: 'google-mock-user',
+      email: 'neighbor@example.com',
+      displayName: 'Neighbor',
+      password: 'google-oauth'
+    }
+    saveRegistry(registry)
+  }
   currentUser = {
     uid: 'google-mock-user',
     email: 'neighbor@example.com',

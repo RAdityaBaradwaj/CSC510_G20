@@ -15,6 +15,7 @@ export interface User {
   location: GeoPoint
   privacyPreference: PrivacyPreference
   totalCreditsCents: number
+  password?: string // demo only, do not store plaintext in production
 }
 
 export interface Errand {

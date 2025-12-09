@@ -7,7 +7,7 @@ const label = { fontSize: 13, marginBottom: 6, color: "#3c2f3f", fontWeight: 600
 const row = { display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 };
 const primary = { width: "100%", padding: "12px 14px", borderRadius: 10, border: "none", background: "#681a75", color: "#fff", fontWeight: 700, cursor: "pointer" };
 
-export default function SignupForm({ onDone }) {
+export default function SignupForm({ onDone, switchToLogin, onDuplicateEmail }) {
   const { signup } = useAuth();
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [err, setErr] = useState("");
@@ -19,7 +19,12 @@ export default function SignupForm({ onDone }) {
       await signup(form.name.trim(), form.email.trim(), form.password);
       onDone?.();
     } catch (e) {
-      setErr(prettyAuthError(e?.code));
+      const message = e?.message || prettyAuthError(e?.code);
+      setErr(message);
+      if (message.toLowerCase().includes('already exists') && typeof switchToLogin === 'function') {
+        onDuplicateEmail?.(message);
+        switchToLogin();
+      }
     }
   };
 

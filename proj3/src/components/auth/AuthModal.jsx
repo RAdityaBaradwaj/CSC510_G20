@@ -21,6 +21,7 @@ const tabBtn = (active) => ({
 
 export default function AuthModal({ open, onClose, defaultTab = "login" }) {
   const [tab, setTab] = useState(defaultTab);
+  const [loginError, setLoginError] = useState("");
   useEffect(() => { if (open) setTab(defaultTab); }, [open, defaultTab]);
   if (!open) return null;
 
@@ -31,7 +32,15 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }) {
           <button style={tabBtn(tab === "login")} onClick={() => setTab("login")}>Login</button>
           <button style={tabBtn(tab === "signup")} onClick={() => setTab("signup")}>Sign up</button>
         </div>
-        {tab === "login" ? <LoginForm onDone={onClose}/> : <SignupForm onDone={onClose}/>}
+        {tab === "login" ? (
+          <LoginForm onDone={onClose} initialError={loginError}/>
+        ) : (
+          <SignupForm
+            onDone={onClose}
+            switchToLogin={() => setTab("login")}
+            onDuplicateEmail={(msg) => setLoginError(msg || "Email already exists. Please log in.")}
+          />
+        )}
         <button
           onClick={onClose}
           style={{ marginTop: 14, background: "transparent", border: "none", color: "#6b6b6b", cursor: "pointer" }}

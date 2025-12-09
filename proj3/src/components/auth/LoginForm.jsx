@@ -18,10 +18,16 @@ const secondary = {
   color: "#3c2f3f", fontWeight: 600, cursor: "pointer",
 };
 
-export default function LoginForm({ onDone }) {
+import { useEffect } from "react";
+
+export default function LoginForm({ onDone, initialError = "" }) {
   const { login } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
-  const [err, setErr] = useState("");
+  const [err, setErr] = useState(initialError || "");
+
+  useEffect(() => {
+    setErr(initialError || "");
+  }, [initialError]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -30,7 +36,9 @@ export default function LoginForm({ onDone }) {
       await login(form.email.trim(), form.password);
       onDone?.();
     } catch (e) {
-      setErr(prettyAuthError(e?.code));
+      // Prefer explicit backend error messages if available
+      const message = e?.message || prettyAuthError(e?.code);
+      setErr(message);
     }
   };
 
